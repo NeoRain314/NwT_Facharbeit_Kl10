@@ -128,9 +128,10 @@ void updateDisplay(){
   mylcd.Set_Text_Back_colour(BLACK);
   mylcd.Set_Text_Size(2);
 
-  mylcd.Print_String("~ Menu ~~~", 3, 3);
+  mylcd.Print_String("   Menu", 3, 3);
   //mylcd.Draw_Line(0, 0, mylcd.Get_Display_Width()-1 ,0);
 
+  mylcd.Set_Draw_color(WHITE);
   mylcd.Draw_Line(0, 22, mylcd.Get_Display_Width()-1 , 22);
   
   for(int i=0; i<arr_length(menues); i++){
