@@ -27,41 +27,88 @@ LCDWIKI_SPI mylcd(MODEL,CS,CD,RST,LED); //model,cs,dc,reset,led
 #define YELLOW  0xFFE0
 #define WHITE   0xFFFF
 
+bool catBlink = true;
+
 void setup() {
   Serial.begin(9600);
   mylcd.Init_LCD();
   mylcd.Fill_Screen(BLACK);
 
-  Draw_Cute_Face();
+ 
 }
 
 void loop(){
-  
+  catBlink = false;
+  Draw_Cute_Face();
+  delay(2000);
+  catBlink = true;
+  Draw_Cute_Face();
+  delay(150);
 }
 
 void Draw_Cute_Face() {
   int centerX = 64;
   int centerY = 64;
-  int noseSize = 10;
+  int noseSize = 7;
   int eyeSize = 10;
-  
-  mylcd.Set_Draw_color(WHITE);
-  //mylcd.Draw_Circle(64, 64, 50);
+  int whiskerLength = 20;
+  int earSize = 15;
 
   //face
-  mylcd.Draw_Circle(centerX-20, centerY-10, 10);
-  mylcd.Draw_Circle(centerX+20, centerY-10, 10);
-  mylcd.Set_Draw_color(BLACK);
-  mylcd.Fill_Rectangle(0, 53, mylcd.Get_Display_Width(),mylcd.Get_Display_Height());
+  if(catBlink){
+    mylcd.Set_Draw_color(BLACK);
+    //mylcd.Fill_Rectangle(0, centerY - noseSize+5, mylcd.Get_Display_Width(), centerY - noseSize+5);
+    mylcd.Fill_Rectangle(0, centerY - eyeSize, mylcd.Get_Display_Width(), centerY - eyeSize - 10);
+    
+    mylcd.Set_Draw_color(WHITE);
+    mylcd.Draw_Line(centerX-30, centerY-12, centerX-10, centerY-12);
+    mylcd.Draw_Line(centerX+30, centerY-12, centerX+10, centerY-12);
+  }else{
+    mylcd.Fill_Screen(BLACK);
+    mylcd.Set_Draw_color(WHITE);
+    
+    mylcd.Draw_Circle(centerX-20, centerY-10, 10);
+    mylcd.Draw_Circle(centerX+20, centerY-10, 10);
 
-  //nose
-  mylcd.Set_Draw_color(WHITE);
-  mylcd.Draw_Line(centerX, centerY, centerX - noseSize / 2, centerY + noseSize);
-  mylcd.Draw_Line(centerX, centerY, centerX + noseSize / 2, centerY + noseSize);
-  mylcd.Draw_Line(centerX - noseSize / 2, centerY + noseSize, centerX + noseSize / 2, centerY + noseSize);
-
-  //whiskers
-  mylcd.Draw_Line(0,0,0,0);
+    mylcd.Draw_Circle(centerX-3, centerY + noseSize +5, 3);
+    mylcd.Draw_Circle(centerX+3, centerY + noseSize +5, 3);
+    
+    mylcd.Set_Draw_color(BLACK);
+    mylcd.Fill_Rectangle(0, centerY-10, mylcd.Get_Display_Width(),centerY + noseSize+5);
+  
+    //nose
+    mylcd.Set_Draw_color(WHITE);
+    //mylcd.Draw_Line(centerX, centerY, centerX - noseSize / 2, centerY + noseSize);
+    //mylcd.Draw_Line(centerX, centerY, centerX + noseSize / 2, centerY + noseSize);
+    //mylcd.Draw_Line(centerX - noseSize / 2, centerY + noseSize, centerX + noseSize / 2, centerY + noseSize);
+    
+    //mylcd.Draw_Line(centerX, centerY + noseSize, centerX - noseSize / 2, centerY);
+    //mylcd.Draw_Line(centerX, centerY + noseSize, centerX + noseSize / 2, centerY);
+    //mylcd.Draw_Line(centerX - noseSize / 2, centerY, centerX + noseSize / 2, centerY);
+    //mylcd.Draw_Line(centerX, centerY + noseSize, centerX, centerY + noseSize + 5);
+  
+    mylcd.Draw_Line(centerX, centerY + noseSize, centerX - noseSize / 2, centerY);
+    mylcd.Draw_Line(centerX, centerY + noseSize, centerX + noseSize / 2, centerY);
+    mylcd.Draw_Line(centerX - noseSize / 2, centerY, centerX + noseSize / 2, centerY);
+    mylcd.Draw_Line(centerX, centerY + noseSize, centerX, centerY + noseSize + 5);
+    
+  
+    //whiskers
+    mylcd.Draw_Line(centerX - 30, centerY + 3, centerX - 30 - whiskerLength, centerY);
+    mylcd.Draw_Line(centerX - 30, centerY + 5, centerX - 30 - whiskerLength, centerY + 5);
+    mylcd.Draw_Line(centerX - 30, centerY + 8, centerX - 30 - whiskerLength, centerY + 10);
+    
+    mylcd.Draw_Line(centerX + 30, centerY +3, centerX + 30 + whiskerLength, centerY);
+    mylcd.Draw_Line(centerX + 30, centerY + 5, centerX + 30 + whiskerLength, centerY + 5);
+    mylcd.Draw_Line(centerX + 30, centerY + 8, centerX + 30 + whiskerLength, centerY + 10);
+  
+    //ears
+    mylcd.Draw_Line(centerX - 40, centerY - 30 - earSize, centerX - 15, centerY - 30);
+    mylcd.Draw_Line(centerX - 40, centerY - 30 - earSize, centerX - 40, centerY - 30);
+  
+    mylcd.Draw_Line(centerX + 40, centerY - 30 - earSize, centerX + 15, centerY - 30);
+    mylcd.Draw_Line(centerX + 40, centerY - 30 - earSize, centerX + 40, centerY - 30);
+  }
 }
 
 
