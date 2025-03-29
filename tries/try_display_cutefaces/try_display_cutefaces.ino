@@ -1,9 +1,9 @@
+#include <LCDWIKI_SPI.h> //Hardware-specific library
+#include <LCDWIKI_GUI.h> //Core graphics library
+
 
 //              CS  A0/DC  RESET  SDA  SCK  LED    VCC     GND    //
 // Arduino Uno  A5   A3     A4    11   13   A0   5V/3.3V   GND    //
-
-#include <LCDWIKI_GUI.h> //Core graphics library
-#include <LCDWIKI_SPI.h> //Hardware-specific library
 
 #define arr_length(a) (sizeof(a) / sizeof(a[0]))
 
