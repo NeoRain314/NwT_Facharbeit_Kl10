@@ -2,8 +2,9 @@
 #include <LCDWIKI_GUI.h> //Core graphics library
 
 
-//              CS  A0/DC  RESET  SDA  SCK  LED    VCC     GND    //
-// Arduino Uno  A5   A3     A4    11   13   A0   5V/3.3V   GND    //
+//                    CS  A0/DC  RESET  SDA  SCK  LED    VCC     GND    //
+// Arduino Uno:       A5   A3     A4    11   13   A0   5V/3.3V   GND    //
+// Arduino Mega2560:  A5   A3     A4    51   52   A0   5V/3.3V   GND    //
 
 #define arr_length(a) (sizeof(a) / sizeof(a[0]))
 
@@ -76,7 +77,6 @@ void Draw_Cute_Face() {
     mylcd.Set_Draw_color(BLACK);
     mylcd.Fill_Rectangle(0, centerY-10, mylcd.Get_Display_Width(),centerY + noseSize+5);
   
-    //nose
     mylcd.Set_Draw_color(WHITE);
     //mylcd.Draw_Line(centerX, centerY, centerX - noseSize / 2, centerY + noseSize);
     //mylcd.Draw_Line(centerX, centerY, centerX + noseSize / 2, centerY + noseSize);
