@@ -1,8 +1,7 @@
 /*
 g_... ---> globale Var
-+ --> pointer
+p --> pointer
 */
-
 
 unsigned long t1 = 0;
 unsigned long t2 = 0;
@@ -29,10 +28,10 @@ AbstractMenu* g_pMainMenu = 0;
 
 
 
-const char* main_menu_entries[] = {"Punkt 1", "Punkt 2", "Punkt 3"};
+const char* main_menu_entries[] = {"Timer Menu", "Punkt 2", "Punkt 3"};
 
 class MainMenu : public AbstractMenu {
-int selected_index = 0;
+  int selected_index = 0;
 
   public:
 
@@ -48,9 +47,12 @@ int selected_index = 0;
     Serial.println("");
   }
 
-  virtual void ok_pressed(){
-    //g_pActiveMenu = g_pTimerMenu;
+  virtual void select_pressed() {
     selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+
+  virtual void ok_pressed(){
+    g_pActiveMenu = g_pTimerMenu;x
   }
 };
 
@@ -62,7 +64,9 @@ class TimerMenu : public AbstractMenu {
   }
 
   virtual void ok_pressed(){
-    g_pActiveMenu = g_pMainMenu;
+    if (selected_index == 0) g_pActiveMenu = g_pMainMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pMainMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
 };
 
