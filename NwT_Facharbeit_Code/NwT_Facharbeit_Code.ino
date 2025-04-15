@@ -8,19 +8,51 @@ unsigned long t1 = 0;
 unsigned long t2 = 0;
 
 class AbstractMenu {
-  public:
-  virtual void draw(){
+  public: // public --> im folgenden funktionen, die von außen aufgerufen werden können
+  virtual void draw(){  //virtual --> abgeleitete Klassen können funktion überschreiben
     Serial.println("Ich bin ein Abstract Menu!");
   }
   
-  virtual void ok_pressed(){
-    Serial.println("not implemented");
+  virtual void ok_pressed() {
+    Serial.println("ok not implemented");
+  }
+
+  virtual void select_pressed() {
+    Serial.println("select not implemented");
   }
 };
 
-AbstractMenu* g_pActiveMenu = 0;
+AbstractMenu* g_pActiveMenu = 0;  // g --> globale Variable; p --> pointer
+
 AbstractMenu* g_pTimerMenu = 0;
 AbstractMenu* g_pMainMenu = 0;
+
+
+
+const char* main_menu_entries[] = {"Punkt 1", "Punkt 2", "Punkt 3"};
+
+class MainMenu : public AbstractMenu {
+int selected_index = 0;
+
+  public:
+
+  MainMenu(){ //wird aufgerufen wenn new MainMenu() aufgerufen wird
+    //...
+  }
+
+  virtual void draw(){
+    for (int i=0; i<3; i++){
+      if (i == selected_index) Serial.print("* ");
+      Serial.println(main_menu_entries[i]);
+    }
+    Serial.println("");
+  }
+
+  virtual void ok_pressed(){
+    //g_pActiveMenu = g_pTimerMenu;
+    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+};
 
 class TimerMenu : public AbstractMenu {
   public:
@@ -31,22 +63,6 @@ class TimerMenu : public AbstractMenu {
 
   virtual void ok_pressed(){
     g_pActiveMenu = g_pMainMenu;
-  }
-};
-
-class MainMenu : public AbstractMenu {
-  public:
-
-  MainMenu(){ //wird aufgerufen wenn new MainMenu() aufgerufen wird
-    //...
-  }
-
-  virtual void draw(){
-    Serial.println("Main Menu!");
-  }
-
-  virtual void ok_pressed(){
-    g_pActiveMenu = g_pTimerMenu;
   }
 };
 
