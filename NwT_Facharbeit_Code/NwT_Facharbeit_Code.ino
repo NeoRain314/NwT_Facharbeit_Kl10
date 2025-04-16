@@ -9,16 +9,20 @@ Benennung:
   class: camelCase
   functions: camelCase
   variables: snake_case
+  defines: KEINE_AHNUNG_SO_HALT
 
 ****************************************************************************************/
 
 
 // <<< Inizalizing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Initalizing <<//
-unsigned long t1 = 0;
-unsigned long t2 = 0;
 #define arr_length(a) (sizeof(a) / sizeof(a[0]))
 
-// ... Pin Defines .................................................................................................................. Pin Defines ... //
+// ... Pin Defines & vars .................................................................................................... Pin Defines & vars ... //
+#define SELECT_BUTTON_PIN 2
+volatile bool select_button_interrupt = false;
+
+#define OK_BUTTON_PIN 3
+volatile bool ok_button_interrupt = false;
 
 // ... libraries ...................................................................................................................... libraries ... //
 #include <LCDWIKI_SPI.h>
@@ -39,11 +43,13 @@ unsigned long t2 = 0;
 
 LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,led
 
-#define BLACK   0x0000
-#define WHITE   0xFFFF
+#define BLACK 0x0000
+#define WHITE 0xFFFF
 
 
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
 class AbstractMenu {
   public: // public --> im folgenden funktionen, die von außen aufgerufen werden können
   virtual void draw(){  //virtual --> abgeleitete Klassen können funktion überschreiben
@@ -86,12 +92,14 @@ class AbstractMenu {
 
 };
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu Variables ~~~ //
+
 AbstractMenu* g_pActiveMenu = 0;
 AbstractMenu* g_pTimerMenu = 0;
 AbstractMenu* g_pMainMenu = 0;
 
 
-
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
 const char* main_menu_entries[] = {"Punkt 1", "Punkt 2", "Punkt 3"};
 
 class MainMenu : public AbstractMenu {
@@ -124,6 +132,7 @@ class MainMenu : public AbstractMenu {
   }
 };
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
 class TimerMenu : public AbstractMenu {
   int selected_index = 0;
   public:
@@ -143,6 +152,11 @@ class TimerMenu : public AbstractMenu {
 // <<< setup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< setup <<//
 void setup() {
   Serial.begin(9600); //Serial Monitor
+  // ... Pin Modes ...................................................................................................................... Pin Modes ... //
+  pinMode(SELECT_BUTTON_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(SELECT_BUTTON_PIN), selectButtonISR, RISING); //Rising 0 -> 1
+  pinMode(OK_BUTTON_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(OK_BUTTON_PIN), okButtonISR, RISING); //Rising 0 -> 1
 
   // ... Menu Structure ............................................................................................................ Menu Structure ... //
   g_pMainMenu = new MainMenu();
@@ -152,29 +166,51 @@ void setup() {
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
   mylcd.Fill_Screen(BLACK);
+  updateLcdDisplay();
 }
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
 void loop() {
-  g_pActiveMenu->draw();
-  delay(1500);
-  g_pActiveMenu->selectPressed();
+  if(select_button_interrupt){
+    selectButton();
+    updateLcdDisplay();
+    select_button_interrupt = false;
+  }
+
+  if(ok_button_interrupt){
+    okButton();
+    updateLcdDisplay();
+    ok_button_interrupt = false;
+  }
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
-void updateClock(){
-  Serial.println(millis());
+void updateLcdDisplay() {
+  g_pActiveMenu->draw();
 }
 
+
+// ... Interrupts .................................................................................................................... Interrupts ... //
+void okButtonISR() {
+  ok_button_interrupt = true;
+}
+
+void selectButtonISR() {
+  select_button_interrupt = true;
+}
+
+// ... Button Actions ............................................................................................................ Button Actions ... //
+void okButton() {
+  Serial.println("ok");
+}
+
+void selectButton() {
+  Serial.println("select");
+  g_pActiveMenu->selectPressed();
+}
 
 // ... Wecker ............................................................................................................................ Wecker ... //
 
 
 // ... Timer .............................................................................................................................. Timer ... //
 
-/*if(millis() > t1+1000){
-    t1 = millis();
-    updateClock(); //update clock
-  }
-  
-  //update current active module (like display clock, display menue, timer)*/
