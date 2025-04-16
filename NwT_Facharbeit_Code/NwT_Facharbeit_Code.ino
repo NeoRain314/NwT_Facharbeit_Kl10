@@ -4,7 +4,7 @@ g_... ---> globale Var
 p --> pointer
 
 Benennung:
-  class: camelCase
+  class: CamelCase
   functions: camelCase
   variables: snake_case
   defines: KEINE_AHNUNG_SO_HALT
@@ -93,12 +93,16 @@ class AbstractMenu {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu Variables ~~~ //
 
 AbstractMenu* g_pActiveMenu = 0;
-AbstractMenu* g_pTimerMenu = 0;
 AbstractMenu* g_pMainMenu = 0;
+AbstractMenu* g_pAlarmMenu = 0;
+AbstractMenu* g_pTimerMenu = 0;
+AbstractMenu* g_pStudyMenu = 0;
+AbstractMenu* g_pLedMenu = 0;
+AbstractMenu* g_pModulMenu = 0;
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
-const char* main_menu_entries[] = {"Timer Menu", "Punkt 2", "Punkt 3"};
+const char* main_menu_entries[] = {"Alarm", "Timer", "Study", "LED", "Modul"};
 
 class MainMenu : public AbstractMenu {
   int selected_index = 0;
@@ -116,29 +120,56 @@ class MainMenu : public AbstractMenu {
     }
     Serial.println("");*/
     printMenuBar("Main Menu");
-    printMenuEntries(selected_index, 3, main_menu_entries); // index, menu_length, menu_entries[]
+    printMenuEntries(selected_index, 5, main_menu_entries); // index, menu_length, menu_entries[]
   }
 
   virtual void selectPressed() {
-    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+    selected_index = (selected_index + 1) % 5; //damit i nie größer 2
   }
 
   virtual void okPressed(){
-    if (selected_index == 0) g_pActiveMenu = g_pTimerMenu;
-    if (selected_index == 1) g_pActiveMenu = g_pMainMenu;
-    if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
+    if (selected_index == 0) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
+    if (selected_index == 3) g_pActiveMenu = g_pLedMenu;
+    if (selected_index == 4) g_pActiveMenu = g_pModulMenu;
+  }
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
+const char* alarm_menu_entries[] = {"Alarm 1", "Alarm 2", "Sound", "back"};
+
+class AlarmMenu : public AbstractMenu {
+  int selected_index = 0;
+  
+  public:
+
+  virtual void draw(){
+    printMenuBar("Alarm Menu");
+    printMenuEntries(selected_index, 4, alarm_menu_entries); // index, menu_length, menu_entries[]
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 4; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    if (selected_index == 0) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
   }
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
-const char* timer_menu_entries[] = {"Punkt 1", "Punkt 2", "back"};
+const char* timer_menu_entries[] = {"new Timer", "Sound", "back"};
 
 class TimerMenu : public AbstractMenu {
   int selected_index = 0;
+
   public:
 
   virtual void draw(){
-    //Serial.println("Timer Menu!");
     printMenuBar("Timer Menu");
     printMenuEntries(selected_index, 3, timer_menu_entries); // index, menu_length, menu_entries[]
   }
@@ -150,6 +181,79 @@ class TimerMenu : public AbstractMenu {
   virtual void okPressed(){
     if (selected_index == 0) g_pActiveMenu = g_pTimerMenu;
     if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
+  }
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Study Menu ~~~ //
+const char* study_menu_entries[] = {"...", "...", "...", "back"};
+
+class StudyMenu : public AbstractMenu {
+  int selected_index = 0;
+  
+  public:
+
+  virtual void draw(){
+    printMenuBar("Study Menu");
+    printMenuEntries(selected_index, 4, study_menu_entries); // index, menu_length, menu_entries[]
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 4; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    if (selected_index == 0) g_pActiveMenu = g_pStudyMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pStudyMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
+    if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
+  }
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LED Menu ~~~ //
+const char* led_menu_entries[] = {"colors", "rainbow", "back"};
+
+class LedMenu : public AbstractMenu {
+  int selected_index = 0;
+  
+  public:
+
+  virtual void draw(){
+    printMenuBar("LED Menu");
+    printMenuEntries(selected_index, 3, led_menu_entries); // index, menu_length, menu_entries[]
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    if (selected_index == 0) g_pActiveMenu = g_pLedMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pLedMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
+  }
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Modul Menu ~~~ //
+const char* modul_menu_entries[] = {"Punkt 1", "Punkt 2", "back"};
+
+class ModulMenu : public AbstractMenu {
+  int selected_index = 0;
+  
+  public:
+
+  virtual void draw(){
+    printMenuBar("Modul Menu");
+    printMenuEntries(selected_index, 3, modul_menu_entries); // index, menu_length, menu_entries[]
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    if (selected_index == 0) g_pActiveMenu = g_pModulMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pModulMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
 };
@@ -166,7 +270,12 @@ void setup() {
 
   // ... Menu Structure ............................................................................................................ Menu Structure ... //
   g_pMainMenu = new MainMenu();
+  g_pAlarmMenu = new AlarmMenu();;
   g_pTimerMenu = new TimerMenu();
+  g_pStudyMenu = new StudyMenu();
+  g_pLedMenu = new LedMenu();
+  g_pModulMenu = new ModulMenu();
+
   g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
