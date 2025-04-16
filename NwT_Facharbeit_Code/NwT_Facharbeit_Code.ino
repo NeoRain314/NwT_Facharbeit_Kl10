@@ -1,5 +1,3 @@
-
-
 /***************************************************************************************
 
 g_... ---> globale Var
@@ -190,6 +188,8 @@ void loop() {
     updateLcdDisplay();
     ok_button_interrupt = false;
   }
+
+  update7Segment();
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
@@ -197,6 +197,17 @@ void updateLcdDisplay() {
   g_pActiveMenu->draw();
 }
 
+void update7Segment() {
+  clock();
+}
+
+void clock(){
+  Serial.println("Uhrzeit");
+}
+
+void timer() {
+
+}
 
 // ... Interrupts .................................................................................................................... Interrupts ... //
 void okButtonISR() {
