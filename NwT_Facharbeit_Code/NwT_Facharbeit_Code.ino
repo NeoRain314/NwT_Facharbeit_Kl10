@@ -286,11 +286,11 @@ class MyAlarm1Menu : public AbstractMenu {
 
   virtual void draw(){
     char buffer[100];
-    sprintf(buffer, "%s:%s ", intToString(alarm1_time[0], true), intToString(alarm1_time[0], true));
+    sprintf(buffer, "%02d:%02d ", alarm1_time[0], alarm1_time[1]);
     myalarm1_menu_entries[1] = buffer;
 
     printMenuBar("Alarm 1");
-    printMenuEntries(selected_index, 3, myalarm1_menu_entries); // index, menu_length, menu_entries[]
+    printMenuEntries(selected_index, 3, myalarm1_menu_entries); // index, menu_length, menu_entries[]y
   }
 
   virtual void selectPressed() {
@@ -343,13 +343,13 @@ class SetTimeMenu : public AbstractMenu {
 
 
   virtual void selectPressed() {
-    if (mode== 0){ //alarm mode
+    if (mode == 0){ //alarm mode
       set_time_menu_output[index] += 1;
       if (index == 0 && set_time_menu_output[index] > 24) set_time_menu_output[index] = 0;
       if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
     }
 
-    if (mode== 1){ //timer mode
+    if (mode == 1){ //timer mode
       set_time_menu_output[index] += 1;
       if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
       if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
@@ -393,7 +393,7 @@ void setup() {
   g_pMyAlarm1Menu = new MyAlarm1Menu();
   g_pSetTimeMenu = new SetTimeMenu();
 
-  g_pActiveMenu = /*g_pMainMenu;*/ g_pSetTimeMenu; //--> g_pActiveMenu legt hier start Menü fest
+  g_pActiveMenu = g_pMainMenu; /*g_pSetTimeMenu;*/ //--> g_pActiveMenu legt hier start Menü fest
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
