@@ -72,8 +72,6 @@ class AbstractMenu {
     Serial.println("select not implemented");
   }
 
-  virtual void changeMode(int m){}
-
   void beforeMenuSwitch() {
     g_pPreviousMenu = this;
   }
@@ -189,6 +187,7 @@ class AlarmMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
 const char* timer_menu_entries[] = {"new Timer", "Sound", "back"};
+int timer_time[] = {0, 0};
 
 class TimerMenu : public AbstractMenu {
   int selected_index = 0;
@@ -206,7 +205,10 @@ class TimerMenu : public AbstractMenu {
 
   virtual void okPressed(){
     beforeMenuSwitch();
-    if (selected_index == 0) g_pActiveMenu = g_pTimerMenu;
+    if (selected_index == 0) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pSetTimeMenu;
+    }
     if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
@@ -323,7 +325,6 @@ class MyAlarm1Menu : public AbstractMenu {
     }
     if (selected_index == 1) {
       beforeMenuSwitch();
-      g_pSetTimeMenu->changeMode(0); //0->alarm ; 1->timer
       g_pActiveMenu = g_pSetTimeMenu;
     }
     if (selected_index == 2) {
@@ -383,15 +384,20 @@ class SetTimeMenu : public AbstractMenu {
         alarm1_time[0] = set_time_menu_output[0];
         alarm1_time[1] = set_time_menu_output[1];
       }
-      
+
+      if (g_pPreviousMenu == g_pTimerMenu) {
+        timer_time[0] = set_time_menu_output[0];
+        timer_time[1] = set_time_menu_output[1];
+      }
+
+      //reset (vieleicht iw noch besser, so dass timer timer bleibt, wecker wecker bleibt und es sich nicht jedes mal 0);
+      index = 0;
+      set_time_menu_output[0] = 0;
+      set_time_menu_output[1] = 0;
+
       g_pActiveMenu = g_pPreviousMenu;
       beforeMenuSwitch();
     }
-  }
-
-  void changeMode(int m){
-    index = 0;
-    mode = m;
   }
 };
 
