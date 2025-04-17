@@ -53,8 +53,11 @@ LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,
 char* intToString(int num, bool leading_zero);
 
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
+class AbstractMenu;
+AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
+
 class AbstractMenu {
   public: // public --> im folgenden funktionen, die von außen aufgerufen werden können
   virtual void draw(){  //virtual --> abgeleitete Klassen können funktion überschreiben
@@ -70,6 +73,10 @@ class AbstractMenu {
   }
 
   virtual void changeMode(int m){}
+
+  void beforeMenuSwitch() {
+    g_pPreviousMenu = this;
+  }
 
   void printMenuBar(char* menu_name) { //helper function to draw top of menu
     mylcd.Fill_Screen(BLACK);
@@ -117,6 +124,7 @@ AbstractMenu* g_pMyAlarm1Menu = 0;
 AbstractMenu* g_pSetTimeMenu = 0;
 
 
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
 const char* main_menu_entries[] = {"Alarm", "Timer", "Study", "LED", "Modul"};
 
@@ -144,6 +152,7 @@ class MainMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pAlarmMenu;
     if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
     if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
@@ -170,6 +179,7 @@ class AlarmMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pMyAlarm1Menu;
     if (selected_index == 1) g_pActiveMenu = g_pAlarmMenu;
     if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
@@ -195,6 +205,7 @@ class TimerMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pTimerMenu;
     if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
@@ -219,6 +230,7 @@ class StudyMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pStudyMenu;
     if (selected_index == 1) g_pActiveMenu = g_pStudyMenu;
     if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
@@ -244,6 +256,7 @@ class LedMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pLedMenu;
     if (selected_index == 1) g_pActiveMenu = g_pLedMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
@@ -268,6 +281,7 @@ class ModulMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pModulMenu;
     if (selected_index == 1) g_pActiveMenu = g_pModulMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
@@ -308,10 +322,15 @@ class MyAlarm1Menu : public AbstractMenu {
       }
     }
     if (selected_index == 1) {
+      beforeMenuSwitch();
       g_pSetTimeMenu->changeMode(0); //0->alarm ; 1->timer
       g_pActiveMenu = g_pSetTimeMenu;
     }
-    if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 2) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pAlarmMenu;
+    }
+    
   }
 };
 
@@ -343,16 +362,16 @@ class SetTimeMenu : public AbstractMenu {
 
 
   virtual void selectPressed() {
-    if (mode == 0){ //alarm mode
+    if (g_pPreviousMenu == g_pMyAlarm1Menu){ //alarm mode
       set_time_menu_output[index] += 1;
-      if (index == 0 && set_time_menu_output[index] > 24) set_time_menu_output[index] = 0;
-      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+      if (index == 0 && set_time_menu_output[index] > 23) set_time_menu_output[index] = 0;
+      if (index == 1 && set_time_menu_output[index] > 59) set_time_menu_output[index] = 0;
     }
 
-    if (mode == 1){ //timer mode
+    if (g_pPreviousMenu == g_pTimerMenu){ //timer mode
       set_time_menu_output[index] += 1;
-      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
-      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+      if (index == 0 && set_time_menu_output[index] > 59) set_time_menu_output[index] = 0;
+      if (index == 1 && set_time_menu_output[index] > 59) set_time_menu_output[index] = 0;
     }
   }
 
@@ -360,10 +379,13 @@ class SetTimeMenu : public AbstractMenu {
     if(index < 1){
       index++;
     }else {
-      // !! ------------------------------------------------- !! muss noch allgemein, nicht nur auf Alarm 1 bezogen gemacht werden !!
-      alarm1_time[0] = set_time_menu_output[0];
-      alarm1_time[1] = set_time_menu_output[1];
-      g_pActiveMenu = g_pMyAlarm1Menu;
+      if (g_pPreviousMenu == g_pMyAlarm1Menu){
+        alarm1_time[0] = set_time_menu_output[0];
+        alarm1_time[1] = set_time_menu_output[1];
+      }
+      
+      g_pActiveMenu = g_pPreviousMenu;
+      beforeMenuSwitch();
     }
   }
 
