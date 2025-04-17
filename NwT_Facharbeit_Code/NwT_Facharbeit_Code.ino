@@ -44,10 +44,13 @@ LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,
 //Color Defines
 #define BLACK 0x0000
 #define WHITE 0xFFFF
+#define GREY  0x8410
 
 #define LCD_BG_COLOR BLACK //-> to change BG color for LCD later
 #define LCD_TEXT_COLOR WHITE //-> to change Text color for LCD later
 
+
+char* intToString(int num, bool leading_zero);
 
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
 
@@ -66,8 +69,10 @@ class AbstractMenu {
     Serial.println("select not implemented");
   }
 
+  virtual void changeMode(int m){}
+
   void printMenuBar(char* menu_name) { //helper function to draw top of menu
-    mylcd.Fill_Screen(0x0000);
+    mylcd.Fill_Screen(BLACK);
 
     mylcd.Set_Text_Mode(0);
     mylcd.Set_Text_colour(LCD_TEXT_COLOR);
@@ -92,6 +97,8 @@ class AbstractMenu {
     }
   }
 
+  
+
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu Variables ~~~ //
@@ -107,6 +114,7 @@ AbstractMenu* g_pModulMenu = 0;
 
 //setting menus
 AbstractMenu* g_pMyAlarm1Menu = 0;
+AbstractMenu* g_pSetTimeMenu = 0;
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
@@ -268,6 +276,7 @@ class ModulMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MyAlarm 1 Menu ~~~ //
 const char* myalarm1_menu_entries[] = {"off",  "00:00", "back"};
+int alarm1_time[] = {0, 0};
 
 class MyAlarm1Menu : public AbstractMenu {
   int selected_index = 0;
@@ -276,6 +285,10 @@ class MyAlarm1Menu : public AbstractMenu {
   public:
 
   virtual void draw(){
+    char buffer[100];
+    sprintf(buffer, "%s:%s ", intToString(alarm1_time[0], true), intToString(alarm1_time[0], true));
+    myalarm1_menu_entries[1] = buffer;
+
     printMenuBar("Alarm 1");
     printMenuEntries(selected_index, 3, myalarm1_menu_entries); // index, menu_length, menu_entries[]
   }
@@ -285,7 +298,7 @@ class MyAlarm1Menu : public AbstractMenu {
   }
 
   virtual void okPressed(){
-    if (selected_index == 0) {
+    if (selected_index == 0) { //switch between on and off
       if(alarm1_stat){
         alarm1_stat = false;
         myalarm1_menu_entries[0] = "off";
@@ -294,11 +307,71 @@ class MyAlarm1Menu : public AbstractMenu {
         myalarm1_menu_entries[0] = "on";
       }
     }
-    if (selected_index == 1) g_pActiveMenu = g_pMyAlarm1Menu;
+    if (selected_index == 1) {
+      g_pSetTimeMenu->changeMode(0); //0->alarm ; 1->timer
+      g_pActiveMenu = g_pSetTimeMenu;
+    }
     if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
   }
 };
 
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ set time Menu ~~~ //
+int set_time_menu_output[] = {0, 0};
+
+class SetTimeMenu : public AbstractMenu {
+  int index = 0;
+  int mode = 0; //0->alarm ; 1->timer
+  
+  public:
+
+  virtual void draw(){
+    mylcd.Fill_Screen(BLACK);
+
+    mylcd.Set_Text_Mode(0);
+    mylcd.Set_Text_Back_colour(LCD_BG_COLOR);
+    mylcd.Set_Text_Size(3);
+
+    mylcd.Set_Text_colour(GREY); //print the selected position white, the other /the rest grey
+    mylcd.Print_String(":", mylcd.Get_Display_Width()/2 - 5, mylcd.Get_Display_Height()/2 - 10);
+    for(int i = 0; i < 2; i++) {
+      mylcd.Set_Text_colour(GREY);
+      if(index == i) mylcd.Set_Text_colour(LCD_TEXT_COLOR);
+      mylcd.Print_String(intToString(set_time_menu_output[i], true), mylcd.Get_Display_Width()/2 - 40 + i*50, mylcd.Get_Display_Height()/2 - 10);
+    }
+  }
+
+
+  virtual void selectPressed() {
+    if (mode== 0){ //alarm mode
+      set_time_menu_output[index] += 1;
+      if (index == 0 && set_time_menu_output[index] > 24) set_time_menu_output[index] = 0;
+      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+    }
+
+    if (mode== 1){ //timer mode
+      set_time_menu_output[index] += 1;
+      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+    }
+  }
+
+  virtual void okPressed(){
+    if(index < 1){
+      index++;
+    }else {
+      // !! ------------------------------------------------- !! muss noch allgemein, nicht nur auf Alarm 1 bezogen gemacht werden !!
+      alarm1_time[0] = set_time_menu_output[0];
+      alarm1_time[1] = set_time_menu_output[1];
+      g_pActiveMenu = g_pMyAlarm1Menu;
+    }
+  }
+
+  void changeMode(int m){
+    index = 0;
+    mode = m;
+  }
+};
 
 // <<< setup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< setup <<//
 void setup() {
@@ -318,8 +391,9 @@ void setup() {
   g_pModulMenu = new ModulMenu();
 
   g_pMyAlarm1Menu = new MyAlarm1Menu();
+  g_pSetTimeMenu = new SetTimeMenu();
 
-  g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
+  g_pActiveMenu = /*g_pMainMenu;*/ g_pSetTimeMenu; //--> g_pActiveMenu legt hier start Menü fest
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
@@ -353,12 +427,20 @@ void update7Segment() {
   clock();
 }
 
-void clock(){
+void clock() {
   Serial.println("Uhrzeit");
 }
 
 void timer() {
 
+}
+
+char* intToString(int num, bool leading_zero) {
+  static char buffer[16]; // 2 Stellen + Nullterminierung
+
+  if (leading_zero) sprintf(buffer, "%02d", num); 
+  else sprintf(buffer, "%d", num);
+  return buffer;
 }
 
 // ... Interrupts .................................................................................................................... Interrupts ... //
