@@ -41,8 +41,12 @@ volatile bool ok_button_interrupt = false;
 
 LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,led
 
+//Color Defines
 #define BLACK 0x0000
 #define WHITE 0xFFFF
+
+#define LCD_BG_COLOR BLACK //-> to change BG color for LCD later
+#define LCD_TEXT_COLOR WHITE //-> to change Text color for LCD later
 
 
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
@@ -66,19 +70,19 @@ class AbstractMenu {
     mylcd.Fill_Screen(0x0000);
 
     mylcd.Set_Text_Mode(0);
-    mylcd.Set_Text_colour(WHITE);
-    mylcd.Set_Text_Back_colour(BLACK);
+    mylcd.Set_Text_colour(LCD_TEXT_COLOR);
+    mylcd.Set_Text_Back_colour(LCD_BG_COLOR);
     mylcd.Set_Text_Size(2);
     mylcd.Print_String(menu_name, 3, 3);
 
-    mylcd.Set_Draw_color(WHITE);
+    mylcd.Set_Draw_color(LCD_TEXT_COLOR);
     mylcd.Draw_Line(0, 22, mylcd.Get_Display_Width()-1 , 22); //draw line under the name
   }
 
   void printMenuEntries(int index, int menu_length, char* menu_entries[]) { //helper function to draw menu
     mylcd.Set_Text_Mode(0);
-    mylcd.Set_Text_colour(WHITE);
-    mylcd.Set_Text_Back_colour(BLACK);
+    mylcd.Set_Text_colour(LCD_TEXT_COLOR);
+    mylcd.Set_Text_Back_colour(LCD_BG_COLOR);
     mylcd.Set_Text_Size(2);
 
     for (int i=0; i<menu_length; i++){
@@ -93,12 +97,16 @@ class AbstractMenu {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu Variables ~~~ //
 
 AbstractMenu* g_pActiveMenu = 0;
+//main menus
 AbstractMenu* g_pMainMenu = 0;
 AbstractMenu* g_pAlarmMenu = 0;
 AbstractMenu* g_pTimerMenu = 0;
 AbstractMenu* g_pStudyMenu = 0;
 AbstractMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
+
+//setting menus
+AbstractMenu* g_pMyAlarm1Menu = 0;
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
@@ -154,7 +162,7 @@ class AlarmMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
-    if (selected_index == 0) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 0) g_pActiveMenu = g_pMyAlarm1Menu;
     if (selected_index == 1) g_pActiveMenu = g_pAlarmMenu;
     if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
     if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
@@ -258,6 +266,39 @@ class ModulMenu : public AbstractMenu {
   }
 };
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MyAlarm 1 Menu ~~~ //
+const char* myalarm1_menu_entries[] = {"off",  "00:00", "back"};
+
+class MyAlarm1Menu : public AbstractMenu {
+  int selected_index = 0;
+  bool alarm1_stat = false;
+  
+  public:
+
+  virtual void draw(){
+    printMenuBar("Alarm 1");
+    printMenuEntries(selected_index, 3, myalarm1_menu_entries); // index, menu_length, menu_entries[]
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    if (selected_index == 0) {
+      if(alarm1_stat){
+        alarm1_stat = false;
+        myalarm1_menu_entries[0] = "off";
+      }else{
+        alarm1_stat = true;
+        myalarm1_menu_entries[0] = "on";
+      }
+    }
+    if (selected_index == 1) g_pActiveMenu = g_pMyAlarm1Menu;
+    if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
+  }
+};
+
 
 // <<< setup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< setup <<//
 void setup() {
@@ -276,11 +317,13 @@ void setup() {
   g_pLedMenu = new LedMenu();
   g_pModulMenu = new ModulMenu();
 
+  g_pMyAlarm1Menu = new MyAlarm1Menu();
+
   g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
-  mylcd.Fill_Screen(BLACK);
+  mylcd.Fill_Screen(LCD_BG_COLOR);
   updateLcdDisplay();
 }
 
