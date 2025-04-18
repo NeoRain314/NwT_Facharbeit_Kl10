@@ -48,6 +48,10 @@ int ok_button_interrupt = 0;
 
 
 // <<< setup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< setup <<//
+int index = 0;
+int alarm_time[] = {15, 0};
+bool alarm_stat = true;
+
 void setup() {
   Serial.begin(9600);
 
@@ -76,29 +80,51 @@ void setup() {
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
 void loop() {
+  
 
   showTime();
 
- /*if (select_button_interrupt == true){ 
-  ah ++;
+ if (select_button_interrupt == true){  
+  select_button_interrupt = false;
+  setAlarm();
  }
  
  if (ok_button_interrupt == true){
+  index = 1;
  }
- */
- if (ah == hour && am == minute){
+ 
+ if (alarm_time[0] == hour && alarm_time[1] == minute && alarm_stat){
   tone(PIEZO_PIN, 400);
+  delay(2000);
+  noTone(PIEZO_PIN);
+  alarm_stat = false;
  }
 }
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
-void showTime(){
-    DateTime now = rtc.now();
 
-  Serial.print(now.hour());
-    Serial.print(":");
-    Serial.println(now.minute());
-    hour = now.hour();
-    minute = now.minute();
+
+void setAlarm() {
+  Serial.print("Index: ");
+  Serial.println(index);
+  if (index == 0) {
+    alarm_time[0]++;
+    Serial.println(alarm_time[0]);
+  } else if (index == 1) {
+    alarm_time[1]++;
+    Serial.println(alarm_time[1]);
+  }
+}
+
+void showTime(){
+  
+  DateTime now = rtc.now();
+  hour = now.hour();
+  minute = now.minute();
+
+  //Serial.print(now.hour());
+    //Serial.print(":");
+    //Serial.println(now.minute());
+    
 
   hour = (hour + 1) % 24; // Sommerzeit (+1)
  display.showNumberDecEx(hour * 100 + minute, 0b01000000);
