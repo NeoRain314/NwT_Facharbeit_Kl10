@@ -53,8 +53,12 @@ LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,
 char* intToString(int num, bool leading_zero);
 
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
+class AbstractMenu;
+class TimerMenu;
+AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
+
 class AbstractMenu {
   public: // public --> im folgenden funktionen, die von außen aufgerufen werden können
   virtual void draw(){  //virtual --> abgeleitete Klassen können funktion überschreiben
@@ -69,7 +73,9 @@ class AbstractMenu {
     Serial.println("select not implemented");
   }
 
-  virtual void changeMode(int m){}
+  void beforeMenuSwitch() {
+    g_pPreviousMenu = this;
+  }
 
   void printMenuBar(char* menu_name) { //helper function to draw top of menu
     mylcd.Fill_Screen(BLACK);
@@ -107,7 +113,7 @@ AbstractMenu* g_pActiveMenu = 0;
 //main menus
 AbstractMenu* g_pMainMenu = 0;
 AbstractMenu* g_pAlarmMenu = 0;
-AbstractMenu* g_pTimerMenu = 0;
+TimerMenu* g_pTimerMenu = 0;
 AbstractMenu* g_pStudyMenu = 0;
 AbstractMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
@@ -117,40 +123,7 @@ AbstractMenu* g_pMyAlarm1Menu = 0;
 AbstractMenu* g_pSetTimeMenu = 0;
 
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
-const char* main_menu_entries[] = {"Alarm", "Timer", "Study", "LED", "Modul"};
 
-class MainMenu : public AbstractMenu {
-  int selected_index = 0;
-
-  public:
-
-  MainMenu(){ //wird aufgerufen wenn new MainMenu() aufgerufen wird
-    //...
-  }
-
-  virtual void draw(){
-    /*for (int i=0; i<3; i++){
-      if (i == selected_index) Serial.print("* ");
-      Serial.println(main_menu_entries[i]);
-    }
-    Serial.println("");*/
-    printMenuBar("Main Menu");
-    printMenuEntries(selected_index, 5, main_menu_entries); // index, menu_length, menu_entries[]
-  }
-
-  virtual void selectPressed() {
-    selected_index = (selected_index + 1) % 5; //damit i nie größer 2
-  }
-
-  virtual void okPressed(){
-    if (selected_index == 0) g_pActiveMenu = g_pAlarmMenu;
-    if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
-    if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
-    if (selected_index == 3) g_pActiveMenu = g_pLedMenu;
-    if (selected_index == 4) g_pActiveMenu = g_pModulMenu;
-  }
-};
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
 const char* alarm_menu_entries[] = {"Alarm 1", "Alarm 2", "Sound", "back"};
@@ -170,6 +143,7 @@ class AlarmMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pMyAlarm1Menu;
     if (selected_index == 1) g_pActiveMenu = g_pAlarmMenu;
     if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
@@ -179,13 +153,19 @@ class AlarmMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
 const char* timer_menu_entries[] = {"new Timer", "Sound", "back"};
+int timer_time[] = {0, 0};
+unsigned long timer_time_mill = 0;
+
 
 class TimerMenu : public AbstractMenu {
   int selected_index = 0;
 
   public:
 
+  bool timer_stat = false;
+
   virtual void draw(){
+    if(timer_stat) timer_menu_entries[0] = "stop Timer"; else timer_menu_entries[0] = "new Timer";
     printMenuBar("Timer Menu");
     printMenuEntries(selected_index, 3, timer_menu_entries); // index, menu_length, menu_entries[]
   }
@@ -195,7 +175,19 @@ class TimerMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
-    if (selected_index == 0) g_pActiveMenu = g_pTimerMenu;
+    beforeMenuSwitch();
+    if (selected_index == 0) {
+      if(timer_stat){
+        timer_time[0] = 0;
+        timer_time[1] = 0;
+        timer_stat = false;
+      }else {
+        beforeMenuSwitch();
+        g_pActiveMenu = g_pSetTimeMenu;
+      }
+
+      
+    }
     if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
@@ -219,6 +211,7 @@ class StudyMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pStudyMenu;
     if (selected_index == 1) g_pActiveMenu = g_pStudyMenu;
     if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
@@ -227,10 +220,13 @@ class StudyMenu : public AbstractMenu {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LED Menu ~~~ //
-const char* led_menu_entries[] = {"colors", "rainbow", "back"};
+const char* led_menu_entries[] = {"on", "red", "back"};
+const char* led_colors[] = {"red", "orange", "yellow", "green", "lightgreen", "blue", "lightblue", "purple", "pink", "rainbow"};
 
 class LedMenu : public AbstractMenu {
   int selected_index = 0;
+  bool led_stat = true;
+  int led_mode = 0;
   
   public:
 
@@ -244,8 +240,24 @@ class LedMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
-    if (selected_index == 0) g_pActiveMenu = g_pLedMenu;
-    if (selected_index == 1) g_pActiveMenu = g_pLedMenu;
+    beforeMenuSwitch();
+    if (selected_index == 0) { //switch between on and off
+      if(led_stat){
+        led_stat = false;
+        led_menu_entries[0] = "off";
+      }else{
+        led_stat = true;
+        led_menu_entries[0] = "on";
+      }
+    }
+    if (selected_index == 1) {
+      led_mode ++;
+      if(led_mode > 9) led_mode = 0;
+      led_menu_entries[1] = led_colors[led_mode];
+      Serial.print(led_mode);
+      Serial.print(" - ");
+      Serial.println(led_menu_entries[led_mode]);
+    }
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
 };
@@ -268,6 +280,7 @@ class ModulMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pModulMenu;
     if (selected_index == 1) g_pActiveMenu = g_pModulMenu;
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
@@ -308,10 +321,14 @@ class MyAlarm1Menu : public AbstractMenu {
       }
     }
     if (selected_index == 1) {
-      g_pSetTimeMenu->changeMode(0); //0->alarm ; 1->timer
+      beforeMenuSwitch();
       g_pActiveMenu = g_pSetTimeMenu;
     }
-    if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 2) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pAlarmMenu;
+    }
+    
   }
 };
 
@@ -343,16 +360,16 @@ class SetTimeMenu : public AbstractMenu {
 
 
   virtual void selectPressed() {
-    if (mode == 0){ //alarm mode
+    if (g_pPreviousMenu == g_pMyAlarm1Menu){ //alarm mode
       set_time_menu_output[index] += 1;
-      if (index == 0 && set_time_menu_output[index] > 24) set_time_menu_output[index] = 0;
-      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+      if (index == 0 && set_time_menu_output[index] > 23) set_time_menu_output[index] = 0;
+      if (index == 1 && set_time_menu_output[index] > 59) set_time_menu_output[index] = 0;
     }
 
-    if (mode == 1){ //timer mode
+    if (g_pPreviousMenu == g_pTimerMenu){ //timer mode
       set_time_menu_output[index] += 1;
-      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
-      if (index == 0 && set_time_menu_output[index] > 60) set_time_menu_output[index] = 0;
+      if (index == 0 && set_time_menu_output[index] > 59) set_time_menu_output[index] = 0;
+      if (index == 1 && set_time_menu_output[index] > 59) set_time_menu_output[index] = 0;
     }
   }
 
@@ -360,16 +377,69 @@ class SetTimeMenu : public AbstractMenu {
     if(index < 1){
       index++;
     }else {
-      // !! ------------------------------------------------- !! muss noch allgemein, nicht nur auf Alarm 1 bezogen gemacht werden !!
-      alarm1_time[0] = set_time_menu_output[0];
-      alarm1_time[1] = set_time_menu_output[1];
-      g_pActiveMenu = g_pMyAlarm1Menu;
+      if (g_pPreviousMenu == g_pMyAlarm1Menu){
+        alarm1_time[0] = set_time_menu_output[0];
+        alarm1_time[1] = set_time_menu_output[1];
+      }
+
+      if (g_pPreviousMenu == g_pTimerMenu) {
+        timer_time[0] = set_time_menu_output[0];
+        timer_time[1] = set_time_menu_output[1];
+
+        Serial.print(set_time_menu_output[0]);
+        Serial.print(":");
+        Serial.println(set_time_menu_output[1]);
+        
+        if(timer_time[0] != 0 || timer_time[1] != 0) g_pTimerMenu->timer_stat = true;
+        Serial.println(g_pTimerMenu->timer_stat);
+      }
+
+      //reset (vieleicht iw noch besser, so dass timer timer bleibt, wecker wecker bleibt und es sich nicht jedes mal 0);
+      index = 0;
+      set_time_menu_output[0] = 0;
+      set_time_menu_output[1] = 0;
+
+      g_pActiveMenu = g_pPreviousMenu;
+      beforeMenuSwitch();
     }
   }
+};
 
-  void changeMode(int m){
-    index = 0;
-    mode = m;
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Main Menu ~~~ //
+const char* main_menu_entries[] = {"Alarm", "Timer", "Study", "LED", "Modul"};
+
+class MainMenu : public AbstractMenu {
+  int selected_index = 0;
+
+  public:
+
+  MainMenu(){ //wird aufgerufen wenn new MainMenu() aufgerufen wird
+    //...
+  }
+
+  virtual void draw(){
+    /*for (int i=0; i<3; i++){
+      if (i == selected_index) Serial.print("* ");
+      Serial.println(main_menu_entries[i]);
+    }
+    Serial.println("");*/
+    printMenuBar("Main Menu");
+    printMenuEntries(selected_index, 5, main_menu_entries); // index, menu_length, menu_entries[]
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 5; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    beforeMenuSwitch();
+    if (selected_index == 0) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
+    if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
+    if (selected_index == 3) g_pActiveMenu = g_pLedMenu;
+    if (selected_index == 4) g_pActiveMenu = g_pModulMenu;
   }
 };
 
@@ -415,6 +485,8 @@ void loop() {
     ok_button_interrupt = false;
   }
 
+  if(g_pTimerMenu->timer_stat) timer();
+
   update7Segment();
 }
 
@@ -428,11 +500,14 @@ void update7Segment() {
 }
 
 void clock() {
-  Serial.println("Uhrzeit");
+  //Serial.println("Uhrzeit");
 }
 
 void timer() {
-
+  Serial.print("Timer: ");
+  Serial.print(intToString(timer_time[0], true));
+  Serial.print(":");
+  Serial.println(intToString(timer_time[1], true));
 }
 
 char* intToString(int num, bool leading_zero) {
@@ -454,12 +529,12 @@ void selectButtonISR() {
 
 // ... Button Actions ............................................................................................................ Button Actions ... //
 void okButton() {
-  Serial.println("ok");
+  //Serial.println("ok");
   g_pActiveMenu->okPressed();
 }
 
 void selectButton() {
-  Serial.println("select");
+  //Serial.println("select");
   g_pActiveMenu->selectPressed();
 }
 
