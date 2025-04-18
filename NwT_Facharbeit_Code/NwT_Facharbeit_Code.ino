@@ -1,3 +1,8 @@
+
+
+
+
+
 /***************************************************************************************
 
 g_... ---> globale Var
@@ -22,9 +27,28 @@ volatile bool select_button_interrupt = false;
 #define OK_BUTTON_PIN 3
 volatile bool ok_button_interrupt = false;
 
+
+
+// RTC Variables
+int rtc_hour = 0;
+int rtc_minute = 0;
+
 // ... libraries ...................................................................................................................... libraries ... //
+#include <Wire.h>
+
+//LCD Display
 #include <LCDWIKI_SPI.h>
 #include <LCDWIKI_GUI.h>
+
+//Real Time Clock (RTC)
+#include <Adafruit_BusIO_Register.h>
+#include <Adafruit_GenericDevice.h>
+#include <Adafruit_I2CDevice.h>
+#include <Adafruit_I2CRegister.h>
+#include <Adafruit_SPIDevice.h>
+
+#include <RTClib.h>
+
 
 // ... LCD Display .................................................................................................................. LCD Display ... //
 // --> LCD_ / lcd_ //
@@ -49,12 +73,16 @@ LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,
 #define LCD_BG_COLOR BLACK //-> to change BG color for LCD later
 #define LCD_TEXT_COLOR WHITE //-> to change Text color for LCD later
 
+// ... Real Time Clock .......................................................................................................... Real Time Clock ... //
+RTC_DS3231 rtc;
+
 
 char* intToString(int num, bool leading_zero);
 
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
 class AbstractMenu;
 class TimerMenu;
+class MyAlarm1Menu;
 AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
@@ -119,11 +147,57 @@ AbstractMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
 
 //setting menus
-AbstractMenu* g_pMyAlarm1Menu = 0;
+MyAlarm1Menu* g_pMyAlarm1Menu = 0;
 AbstractMenu* g_pSetTimeMenu = 0;
 
 
 
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MyAlarm 1 Menu ~~~ //
+const char* myalarm1_menu_entries[] = {"off",  "00:00", "back"};
+int alarm1_time[] = {0, 0};
+
+class MyAlarm1Menu : public AbstractMenu {
+  int selected_index = 0;
+  
+  public:
+
+  bool alarm1_stat = false;
+
+  virtual void draw(){
+    char buffer[100];
+    sprintf(buffer, "%02d:%02d ", alarm1_time[0], alarm1_time[1]);
+    myalarm1_menu_entries[1] = buffer;
+
+    printMenuBar("Alarm 1");
+    printMenuEntries(selected_index, 3, myalarm1_menu_entries); // index, menu_length, menu_entries[]y
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    if (selected_index == 0) { //switch between on and off
+      if(alarm1_stat){
+        alarm1_stat = false;
+        myalarm1_menu_entries[0] = "off";
+      }else{
+        alarm1_stat = true;
+        myalarm1_menu_entries[0] = "on";
+      }
+    }
+    if (selected_index == 1) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pSetTimeMenu;
+    }
+    if (selected_index == 2) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pAlarmMenu;
+    }
+    
+  }
+};
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
 const char* alarm_menu_entries[] = {"Alarm 1", "Alarm 2", "Sound", "back"};
@@ -288,51 +362,6 @@ class ModulMenu : public AbstractMenu {
   }
 };
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MyAlarm 1 Menu ~~~ //
-const char* myalarm1_menu_entries[] = {"off",  "00:00", "back"};
-int alarm1_time[] = {0, 0};
-
-class MyAlarm1Menu : public AbstractMenu {
-  int selected_index = 0;
-  bool alarm1_stat = false;
-  
-  public:
-
-  virtual void draw(){
-    char buffer[100];
-    sprintf(buffer, "%02d:%02d ", alarm1_time[0], alarm1_time[1]);
-    myalarm1_menu_entries[1] = buffer;
-
-    printMenuBar("Alarm 1");
-    printMenuEntries(selected_index, 3, myalarm1_menu_entries); // index, menu_length, menu_entries[]y
-  }
-
-  virtual void selectPressed() {
-    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
-  }
-
-  virtual void okPressed(){
-    if (selected_index == 0) { //switch between on and off
-      if(alarm1_stat){
-        alarm1_stat = false;
-        myalarm1_menu_entries[0] = "off";
-      }else{
-        alarm1_stat = true;
-        myalarm1_menu_entries[0] = "on";
-      }
-    }
-    if (selected_index == 1) {
-      beforeMenuSwitch();
-      g_pActiveMenu = g_pSetTimeMenu;
-    }
-    if (selected_index == 2) {
-      beforeMenuSwitch();
-      g_pActiveMenu = g_pAlarmMenu;
-    }
-    
-  }
-};
-
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ set time Menu ~~~ //
 int set_time_menu_output[] = {0, 0};
@@ -475,6 +504,18 @@ void setup() {
   mylcd.Init_LCD();
   mylcd.Fill_Screen(LCD_BG_COLOR);
   updateLcdDisplay();
+
+  // ... Real Time Clock .......................................................................................................... Real Time Clock ... //
+  if (!rtc.begin()) {
+    Serial.println("RTC nicht gefunden!");
+    while (1);
+  }
+
+  // Falls die RTC nicht eingestellt ist, die aktuelle Zeit setzen:
+  if (rtc.lostPower()) {
+    Serial.println("RTC hat Strom verloren, Setze Zeit auf Kompilierzeit!");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 }
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
@@ -494,6 +535,10 @@ void loop() {
   if(g_pTimerMenu->timer_stat) timer();
 
   update7Segment();
+
+  if(g_pMyAlarm1Menu->alarm1_stat) {
+    alarm1();
+  }
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
@@ -506,7 +551,27 @@ void update7Segment() {
 }
 
 void clock() {
-  //Serial.println("Uhrzeit");
+  DateTime now = rtc.now();
+
+  rtc_hour = now.hour();
+  rtc_minute = now.minute();
+  Serial.print(intToString(rtc_hour, true));
+  Serial.print(":");
+  Serial.println(intToString(rtc_minute, true));
+
+  /*
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(" ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.println(now.second(), DEC);
+  */
 }
 
 void timer() {
@@ -526,6 +591,10 @@ void timer() {
   Serial.print(intToString(minutes, true));
   Serial.print(":");
   Serial.println(intToString(seconds, true));
+}
+
+void alarm1() {
+
 }
 
 char* intToString(int num, bool leading_zero) {
