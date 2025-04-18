@@ -27,6 +27,8 @@ volatile bool select_button_interrupt = false;
 #define OK_BUTTON_PIN 3
 volatile bool ok_button_interrupt = false;
 
+#define PIEZO_PIN 8
+
 
 
 // RTC Variables
@@ -486,6 +488,13 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(SELECT_BUTTON_PIN), selectButtonISR, RISING); //Rising 0 -> 1
   pinMode(OK_BUTTON_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(OK_BUTTON_PIN), okButtonISR, RISING); //Rising 0 -> 1
+  pinMode(PIEZO_PIN, OUTPUT);
+
+  //short test for Piezo
+  tone(PIEZO_PIN, 440);
+  delay(1000);
+  noTone(PIEZO_PIN);
+
 
   // ... Menu Structure ............................................................................................................ Menu Structure ... //
   g_pMainMenu = new MainMenu();
@@ -542,6 +551,8 @@ void loop() {
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
+
+// ... update Displays .......................................................................................................... update Displays ... //
 void updateLcdDisplay() {
   g_pActiveMenu->draw();
 }
@@ -550,6 +561,7 @@ void update7Segment() {
   clock();
 }
 
+// ... clock  ............................................................................................................................. clock ... //
 void clock() {
   DateTime now = rtc.now();
 
@@ -574,6 +586,7 @@ void clock() {
   */
 }
 
+// ... Timer .......................................................................................................... Timer ... //
 void timer() {
   if(millis() > g_pTimerMenu->timer_start_mill + g_pTimerMenu->timer_time_mill) {
     g_pTimerMenu->timer_stat = false;
@@ -593,10 +606,19 @@ void timer() {
   Serial.println(intToString(seconds, true));
 }
 
-void alarm1() {
 
+// ... Alarms ............................................................................................................................ Alarms ... //
+void alarm1() {
+  if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute){
+    tone(PIEZO_PIN, 400);
+    delay(2000);
+    noTone(PIEZO_PIN);
+    g_pMyAlarm1Menu->alarm1_stat = false;
+    updateLcdDisplay();
+  }
 }
 
+// ... other .............................................................................................................................. other ... //
 char* intToString(int num, bool leading_zero) {
   static char buffer[16]; // 2 Stellen + Nullterminierung
 
