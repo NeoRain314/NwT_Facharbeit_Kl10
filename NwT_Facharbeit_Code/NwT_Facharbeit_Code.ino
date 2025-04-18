@@ -154,7 +154,6 @@ class AlarmMenu : public AbstractMenu {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
 const char* timer_menu_entries[] = {"new Timer", "Sound", "back"};
 int timer_time[] = {0, 0};
-unsigned long timer_time_mill = 0;
 
 
 class TimerMenu : public AbstractMenu {
@@ -163,6 +162,8 @@ class TimerMenu : public AbstractMenu {
   public:
 
   bool timer_stat = false;
+  unsigned long timer_start_mill = 0;
+  unsigned long timer_time_mill = 0;
 
   virtual void draw(){
     if(timer_stat) timer_menu_entries[0] = "stop Timer"; else timer_menu_entries[0] = "new Timer";
@@ -390,8 +391,13 @@ class SetTimeMenu : public AbstractMenu {
         Serial.print(":");
         Serial.println(set_time_menu_output[1]);
         
-        if(timer_time[0] != 0 || timer_time[1] != 0) g_pTimerMenu->timer_stat = true;
-        Serial.println(g_pTimerMenu->timer_stat);
+        if(timer_time[0] != 0 || timer_time[1] != 0) { //Timer startet
+          g_pTimerMenu->timer_stat = true;
+          g_pTimerMenu->timer_time_mill = timer_time[0]*60000 + timer_time[1]*1000;
+          g_pTimerMenu->timer_start_mill = millis();
+        }
+
+        //Serial.println(g_pTimerMenu->timer_stat);
       }
 
       //reset (vieleicht iw noch besser, so dass timer timer bleibt, wecker wecker bleibt und es sich nicht jedes mal 0);
@@ -504,10 +510,22 @@ void clock() {
 }
 
 void timer() {
+  if(millis() > g_pTimerMenu->timer_start_mill + g_pTimerMenu->timer_time_mill) {
+    g_pTimerMenu->timer_stat = false;
+    Serial.println("");
+    Serial.println("-----------------------");
+    Serial.println("Timer ended!");
+    return;
+  }
+
+  unsigned long rest_mill = g_pTimerMenu->timer_start_mill + g_pTimerMenu->timer_time_mill - millis();
+  int minutes = rest_mill/60000;
+  int seconds = (rest_mill%60000) /1000;
+
   Serial.print("Timer: ");
-  Serial.print(intToString(timer_time[0], true));
+  Serial.print(intToString(minutes, true));
   Serial.print(":");
-  Serial.println(intToString(timer_time[1], true));
+  Serial.println(intToString(seconds, true));
 }
 
 char* intToString(int num, bool leading_zero) {
