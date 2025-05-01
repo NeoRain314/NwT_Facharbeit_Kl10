@@ -7,6 +7,7 @@ int bewegungsstatus = 0; // darin wird später gespeichert ob eine Bewegung erka
 // <<< setup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< setup <<< //
 
 void setup() {
+  Serial.begin(9600);
   pinMode (piezo, OUTPUT);
   pinMode (bewegung, INPUT);
 }
@@ -15,6 +16,7 @@ void setup() {
 
 void loop() {
   bewegungsstatus = digitalRead (bewegung); // wenn 5 Volt (also Bewegung wahrgenommen) dann HIGH; wenn 0 Volt (also keine Bewegung) dann LOW --> wird in Variable bewegungsstatus gespeichert
+  Serial.println(bewegungsstatus);
   if (bewegungsstatus == HIGH) { // wenn eine Bewegung wahrgenommen wurde...
     digitalWrite (piezo, HIGH); //...dann ton von piezo
     delay (5000); // 5 sekunden lang
