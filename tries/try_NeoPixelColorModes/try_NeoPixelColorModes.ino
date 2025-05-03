@@ -30,7 +30,7 @@ void setup() {
 }
 
 void loop() {
-  neoClassic(NEO_RED);
+/* neoClassic(NEO_RED);
   delay(1000);
   neoClassic(NEO_ORANGE);
   delay(1000);
@@ -48,6 +48,8 @@ void loop() {
   delay(1000);
   neoClassic(NEO_PINK);
   delay(1000);
+*/
+  neoFading(NEO_RED, 2);
  }
 
 
@@ -57,6 +59,15 @@ void neoClassic(int g, int b, int r){
   pixels.show();
  }
 }
-
+ void neoFading(int g, int b, int r, int speed){
+  for (int brightness = 20; brightness <= 255; brightness += speed) {
+    neoClassic (g * brightness / 255, b * brightness / 255, r * brightness / 255);
+    delay(10);
+  }
+  for (int brightness = 255; brightness >= 20; brightness -= speed) {
+    neoClassic (g * brightness / 255, b * brightness / 255, r * brightness / 255);
+    delay(10);
+  }
+ }
 
 
