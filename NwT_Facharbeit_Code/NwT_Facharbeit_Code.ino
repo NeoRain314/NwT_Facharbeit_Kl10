@@ -3,6 +3,8 @@
 
 
 
+
+
 /***************************************************************************************
 
 g_... ---> globale Var
@@ -37,6 +39,7 @@ int rtc_minute = 0;
 
 // ... libraries ...................................................................................................................... libraries ... //
 #include <Wire.h>
+#include <Arduino.h>
 
 //LCD Display
 #include <LCDWIKI_SPI.h>
@@ -51,6 +54,8 @@ int rtc_minute = 0;
 
 #include <RTClib.h>
 
+//7 Segment Display
+#include <TM1637Display.h>
 
 // ... LCD Display .................................................................................................................. LCD Display ... //
 // --> LCD_ / lcd_ //
@@ -78,6 +83,11 @@ LCDWIKI_SPI mylcd(LCD_MODEL,LCD_CS,LCD_CD,LCD_RST,LCD_LED); //model,cs,dc,reset,
 // ... Real Time Clock .......................................................................................................... Real Time Clock ... //
 RTC_DS3231 rtc;
 
+// ... 7 Segment Display ...................................................................................................... 7 Segment Display ... //
+#define CLK 5
+#define DIO 6
+
+TM1637Display display(CLK, DIO);
 
 char* intToString(int num, bool leading_zero);
 
@@ -140,7 +150,7 @@ class AbstractMenu {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Menu Variables ~~~ //
 
 AbstractMenu* g_pActiveMenu = 0;
-//main menus
+//main menus 
 AbstractMenu* g_pMainMenu = 0;
 AbstractMenu* g_pAlarmMenu = 0;
 TimerMenu* g_pTimerMenu = 0;
@@ -525,6 +535,11 @@ void setup() {
     Serial.println("RTC hat Strom verloren, Setze Zeit auf Kompilierzeit!");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
+
+  // ... 7 Segment Display ........................................................................................................ Real Time Clock ... //
+  display.setBrightness(0x0f);
+  uint8_t data[] = { 255, 255, 255, 255 };
+  display.setSegments(data);
 }
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
@@ -559,6 +574,7 @@ void updateLcdDisplay() {
 
 void update7Segment() {
   clock();
+  display.showNumberDecEx(rtc_hour * 100 + rtc_minute, 0b01000000);  // hour*100+minute (--> vierstellige Zahl (11*100*30 =1130)) ;0b01000000 Binärzahl (--> aktiviert den Doppelpunkt) 
 }
 
 // ... clock  ............................................................................................................................. clock ... //
@@ -611,7 +627,7 @@ void timer() {
 void alarm1() {
   if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute){
     tone(PIEZO_PIN, 400);
-    delay(2000);
+    delay(2000); // !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !!  Ersatz für Delay
     noTone(PIEZO_PIN);
     g_pMyAlarm1Menu->alarm1_stat = false;
     updateLcdDisplay();
