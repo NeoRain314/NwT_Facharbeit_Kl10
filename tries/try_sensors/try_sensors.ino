@@ -14,6 +14,12 @@ void setup() {
 
 void loop() {
   motion_stat = digitalRead(MOTIONSENSOR_PIN); // wenn 5 Volt (also Bewegung wahrgenommen) dann HIGH; wenn 0 Volt (also keine Bewegung) dann LOW --> wird in Variable bewegungsstatus gespeichert
-  Serial.println(motion_stat);
+  
+  if (motion_stat == HIGH) { 
+    Serial.println(1);
+  }
+  else { 
+    Serial.println(0);
+  }
   delay(500);
 }
