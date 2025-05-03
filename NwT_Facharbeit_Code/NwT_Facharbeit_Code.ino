@@ -556,13 +556,15 @@ void loop() {
     ok_button_interrupt = false;
   }
 
-  if(g_pTimerMenu->timer_stat) timer();
-
-  update7Segment();
-
-  if(g_pMyAlarm1Menu->alarm1_stat) {
-    alarm1();
+  clock();
+  
+  if(g_pTimerMenu->timer_stat){
+    timer();
+  } else {
+    update7Segment(rtc_hour, rtc_minute);
   }
+
+  if(g_pMyAlarm1Menu->alarm1_stat) alarm1();
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
@@ -572,9 +574,8 @@ void updateLcdDisplay() {
   g_pActiveMenu->draw();
 }
 
-void update7Segment() {
-  clock();
-  display.showNumberDecEx(rtc_hour * 100 + rtc_minute, 0b01000000);  // hour*100+minute (--> vierstellige Zahl (11*100*30 =1130)) ;0b01000000 Binärzahl (--> aktiviert den Doppelpunkt) 
+void update7Segment(int first_number, int second_number) {
+  display.showNumberDecEx(first_number * 100 + second_number, 0b01000000);  // hour*100+minute (--> vierstellige Zahl (11*100*30 =1130)) ;0b01000000 Binärzahl (--> aktiviert den Doppelpunkt) 
 }
 
 // ... clock  ............................................................................................................................. clock ... //
@@ -586,6 +587,7 @@ void clock() {
   Serial.print(intToString(rtc_hour, true));
   Serial.print(":");
   Serial.println(intToString(rtc_minute, true));
+
 
   /*
   Serial.print(now.year(), DEC);
@@ -620,6 +622,8 @@ void timer() {
   Serial.print(intToString(minutes, true));
   Serial.print(":");
   Serial.println(intToString(seconds, true));
+
+  update7Segment(minutes, seconds);
 }
 
 
