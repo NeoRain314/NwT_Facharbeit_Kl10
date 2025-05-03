@@ -6,8 +6,8 @@
 #include <Arduino.h>
 
 // Module connection pins (Digital Pins)
-#define CLK 2
-#define DIO 3
+#define CLK 5
+#define DIO 1
 
 TM1637Display display(CLK, DIO);
 
