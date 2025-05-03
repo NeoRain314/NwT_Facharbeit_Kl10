@@ -95,6 +95,7 @@ char* intToString(int num, bool leading_zero);
 class AbstractMenu;
 class TimerMenu;
 class MyAlarm1Menu;
+class StudyMenu;
 AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
@@ -154,7 +155,7 @@ AbstractMenu* g_pActiveMenu = 0;
 AbstractMenu* g_pMainMenu = 0;
 AbstractMenu* g_pAlarmMenu = 0;
 TimerMenu* g_pTimerMenu = 0;
-AbstractMenu* g_pStudyMenu = 0;
+StudyMenu* g_pStudyMenu = 0;
 AbstractMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
 
@@ -289,7 +290,7 @@ class StudyMenu : public AbstractMenu {
   int selected_index = 0;
   
   public:
-  bool study_stat = 0;
+  bool study_stat = false;
   int study_mode = 0;
   int study_repetitions = 1;
   unsigned long studytimer_star_mill = 0;
@@ -321,7 +322,9 @@ class StudyMenu : public AbstractMenu {
 
       sprintf(study_menu_entries[1], "Rept: %d", study_repetitions);
     }
-    if (selected_index == 2) g_pActiveMenu = g_pStudyMenu;
+    if (selected_index == 2){
+      study_stat = true;
+    };
     if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
   }
 };
@@ -585,6 +588,8 @@ void loop() {
   }
 
   if(g_pMyAlarm1Menu->alarm1_stat) alarm1();
+
+  if(g_pStudyMenu->study_stat) Serial.println("test");
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
