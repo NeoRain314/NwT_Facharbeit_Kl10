@@ -293,12 +293,20 @@ class StudyMenu : public AbstractMenu {
   bool study_stat = false;
   int study_mode = 0;
   int study_repetitions = 1;
-  unsigned long studytimer_star_mill = 0;
+  unsigned long studytimer_start_mill = 0;
   unsigned long studytimer_time_mill = 0;
 
+  bool study_pause = false; //pause or fucus
+  int study_curr_repetition = 0; //current repetition
+
   virtual void draw(){
-    printMenuBar("Study Menu");
-    printMenuEntries(selected_index, 4, study_menu_entries); // index, menu_length, menu_entries[]
+    if(study_stat){
+      printMenuBar("Focusing");
+    }else {
+      printMenuBar("Study Menu");
+      printMenuEntries(selected_index, 4, study_menu_entries); // index, menu_length, menu_entries[]
+    }
+    
   }
 
   virtual void selectPressed() {
@@ -583,13 +591,13 @@ void loop() {
   
   if(g_pTimerMenu->timer_stat){
     timer();
+  } else if(g_pStudyMenu->study_stat) {
+    studyMode();
   } else {
     update7Segment(rtc_hour, rtc_minute);
   }
 
   if(g_pMyAlarm1Menu->alarm1_stat) alarm1();
-
-  if(g_pStudyMenu->study_stat) Serial.println("test");
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
@@ -609,24 +617,9 @@ void clock() {
 
   rtc_hour = now.hour();
   rtc_minute = now.minute();
-  Serial.print(intToString(rtc_hour, true));
+  /*Serial.print(intToString(rtc_hour, true));
   Serial.print(":");
-  Serial.println(intToString(rtc_minute, true));
-
-
-  /*
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.print(now.day(), DEC);
-  Serial.print(" ");
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.println(now.second(), DEC);
-  */
+  Serial.println(intToString(rtc_minute, true));*/
 }
 
 // ... Timer .......................................................................................................... Timer ... //
@@ -658,9 +651,60 @@ void alarm1() {
     tone(PIEZO_PIN, 400);
     delay(2000); // !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !!  Ersatz für Delay
     noTone(PIEZO_PIN);
+    //sende funk signal zu Lichtanschaltknopf (wenn in Menü eingeschaltet) / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ 
     g_pMyAlarm1Menu->alarm1_stat = false;
     updateLcdDisplay();
   }
+}
+
+// ... Study Mode .................................................................................................................... Study Mode ... //
+void studyMode(){
+  //Serial.println("Study Mode");
+  const int focus_times[] = {25, 50, 90};
+  const int pause_times[] = {5, 10, 20};
+
+  //Serial.println( g_pStudyMenu->study_curr_repetition);
+
+  if(millis() > g_pStudyMenu->studytimer_start_mill + g_pStudyMenu->studytimer_time_mill || g_pStudyMenu->study_curr_repetition == 0) {
+    if(g_pStudyMenu->study_curr_repetition == g_pStudyMenu->study_repetitions){
+      g_pStudyMenu->study_curr_repetition = 0;
+      g_pStudyMenu->study_stat = false;
+      return;
+    }
+    if(g_pStudyMenu->study_pause == false){
+      //next pause
+      g_pStudyMenu->study_pause = true;
+      studytimer_time[0] = 0;
+      studytimer_time[1] = pause_times[g_pStudyMenu->study_mode];
+
+      g_pStudyMenu->studytimer_time_mill = studytimer_time[0]*60000 + studytimer_time[1]*1000;
+      g_pStudyMenu->studytimer_start_mill = millis();
+
+      g_pStudyMenu->study_curr_repetition++;
+      // irgendwie geht er direkt am anfang in die pause !?!?!?!?!?!?!
+
+    } else {
+      //next focus
+      g_pStudyMenu->study_pause = false;
+      studytimer_time[0] = 0;
+      studytimer_time[1] = focus_times[g_pStudyMenu->study_mode];
+
+      g_pStudyMenu->studytimer_time_mill = studytimer_time[0]*60000 + studytimer_time[1]*1000;
+      g_pStudyMenu->studytimer_start_mill = millis();
+
+    }
+  }
+
+  unsigned long rest_mill = g_pStudyMenu->studytimer_start_mill + g_pStudyMenu->studytimer_time_mill - millis();
+  int minutes = rest_mill/60000;
+  int seconds = (rest_mill%60000) /1000;
+
+  Serial.print("Study Timer: ");
+  Serial.print(intToString(minutes, true));
+  Serial.print(":");
+  Serial.println(intToString(seconds, true));
+
+  update7Segment(minutes, seconds);
 }
 
 // ... other .............................................................................................................................. other ... //
