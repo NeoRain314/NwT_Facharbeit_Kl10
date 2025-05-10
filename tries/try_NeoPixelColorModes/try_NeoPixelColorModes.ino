@@ -30,7 +30,7 @@ void setup() {
 }
 
 void loop() {
-/* neoClassic(NEO_RED);
+  neoClassic(NEO_RED);
   delay(1000);
   neoClassic(NEO_ORANGE);
   delay(1000);
@@ -52,7 +52,7 @@ void loop() {
   neoFading(NEO_RED, 2);
 
   neoRainbow(10);
-*/
+
   neoRainbowAll(10);
 }
 void neoClassic(int g, int b, int r){ // einzelne farben normal 
