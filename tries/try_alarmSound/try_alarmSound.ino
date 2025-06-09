@@ -1,4 +1,4 @@
-#define PIEZO_PIN 8
+#define PIEZO_PIN 10
 
 #define C 264
 #define E 330
@@ -49,12 +49,12 @@ void loop(){
 }
 
 void process() {
-    tone(PIEZO_PIN, curr_sound_tones[i]);
+    tone(PIEZO_PIN, sound2_tones[i]);
     c++;
-    if(c > curr_sound_length[i]){
+    if(c > sound2_length[i]){
       i++;
       c = 0;
     }
 
-    if(i > arr_length(sound1_tones)) i = 0;
+    if(i > arr_length(sound2_tones)) i = 0;
   }

@@ -29,7 +29,7 @@ volatile bool select_button_interrupt = false;
 #define OK_BUTTON_PIN 3
 volatile bool ok_button_interrupt = false;
 
-#define PIEZO_PIN 8
+#define PIEZO_PIN 10
 
 
 
@@ -37,12 +37,17 @@ volatile bool ok_button_interrupt = false;
 int rtc_hour = 0;
 int rtc_minute = 0;
 
-// Tone Defines
+// Tone Defines nb 4
+#define C 264
+#define E 330
+#define G 396
 #define A 440
+#define CZWEI 528 
+#define PAUSE 0
 
-#define HALBE
-#define VIERTEL
-#define ACHTEL
+#define HALBE 3000
+#define VIERTEL 2000
+#define ACHTEL 1000
 
 
 // ... libraries ...................................................................................................................... libraries ... //
@@ -536,35 +541,45 @@ class MainMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ AlarmRinging Menu ~~~ //
 
-const int sound1_tones[] = {};
-const int sound1_length[] = {};
+const int sound0_tones[] = {A, E, G};
+const int sound0_length[] = {ACHTEL, ACHTEL, HALBE};
 
-int currentSound = 0; 
+const int sound1_tones[] = {A, PAUSE, A, PAUSE};
+const int sound1_length[] = {ACHTEL, ACHTEL, ACHTEL, ACHTEL};
+
+const int sound2_tones[] = {C, E, G, CZWEI,  G, E};
+const int sound2_length[] = {VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL};
+
+const int sound3_tones[] = {A, PAUSE, A};
+const int sound3_length[] = {ACHTEL, ACHTEL, ACHTEL};
+
+int curr_sound_tones[10] = {};
+int curr_sound_length[10] = {};
+
 
 class AlarmRingingMenu : public AbstractMenu {
-  int selected_index = 0;
   int i = 0; //index of current tone
   int c = 0; //counter
   
   public:
 
   virtual void draw(){
+    printMenuBar("Alarm is ringing");
     //draw cat
   }
 
-  virtual void process() {
-    tone(PIEZO_PIN, sound1_tones[i]);
+  void process() {
+    tone(PIEZO_PIN, sound3_tones[i]);
     c++;
-    if(c > sound1_length[i]){
+    if(c > sound3_length[i]){
       i++;
       c = 0;
     }
 
-    if(i >arr_length(sound1_tones)) i = 0;
+    if(i > arr_length(sound3_tones)) i = 0;
   }
 
   virtual void selectPressed() {
-    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
   }
 
   virtual void okPressed(){
@@ -581,11 +596,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(SELECT_BUTTON_PIN), selectButtonISR, RISING); //Rising 0 -> 1
   pinMode(OK_BUTTON_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(OK_BUTTON_PIN), okButtonISR, RISING); //Rising 0 -> 1
-  pinMode(PIEZO_PIN, OUTPUT);
+  //pinMode(PIEZO_PIN, OUTPUT);
 
   //short test for Piezo
-  tone(PIEZO_PIN, 440);
-  delay(1000);
+  //tone(PIEZO_PIN, 600);
+  //delay(1000);
   noTone(PIEZO_PIN);
 
 
@@ -601,7 +616,8 @@ void setup() {
   g_pMyAlarm1Menu = new MyAlarm1Menu();
   g_pSetTimeMenu = new SetTimeMenu();
 
-  g_pActiveMenu = g_pMainMenu; /*g_pSetTimeMenu;*/ //--> g_pActiveMenu legt hier start Menü fest
+  //g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
+  g_pActiveMenu = g_pAlarmRingingMenu;
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
@@ -627,6 +643,23 @@ void setup() {
 }
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
+int g_lfu_counter = 0;
+void lowfreqUpdate() { //function so for example the clock doesnt update every cycle because this causes errors (like with the tone() function)
+  g_lfu_counter++;
+  if(g_lfu_counter > 2040){
+    g_lfu_counter = 0;
+
+    clock();
+    if(g_pTimerMenu->timer_stat){
+    timer();
+  } else if(g_pStudyMenu->study_stat) {
+    studyMode();
+  } else {
+    update7Segment(rtc_hour, rtc_minute);
+  }
+  }
+}
+
 void loop() {
   if(select_button_interrupt){
     selectButton();
@@ -641,22 +674,18 @@ void loop() {
   }
 
   g_pActiveMenu->process();
-  clock();
+
+  lowfreqUpdate();
+
   
-  if(g_pTimerMenu->timer_stat){
-    timer();
-  } else if(g_pStudyMenu->study_stat) {
-    studyMode();
-  } else {
-    update7Segment(rtc_hour, rtc_minute);
-  }
+
 
   if(g_pMyAlarm1Menu->alarm1_stat) alarm1();
 }
 
 // <<< sub functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< sub functions <<//
 
-// ... update Displays .......................................................................................................... update Displays ... //
+// ... update  .................................................................................................................. update Displays ... //
 void updateLcdDisplay() {
   g_pActiveMenu->draw();
 }
@@ -664,6 +693,8 @@ void updateLcdDisplay() {
 void update7Segment(int first_number, int second_number) {
   display.showNumberDecEx(first_number * 100 + second_number, 0b01000000);  // hour*100+minute (--> vierstellige Zahl (11*100*30 =1130)) ;0b01000000 Binärzahl (--> aktiviert den Doppelpunkt) 
 }
+
+
 
 // ... clock  ............................................................................................................................. clock ... //
 void clock() {
@@ -702,9 +733,7 @@ void timer() {
 // ... Alarms ............................................................................................................................ Alarms ... //
 void alarm1() {
   if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute){
-    tone(PIEZO_PIN, 400);
-    delay(2000); // !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !! !!  Ersatz für Delay
-    noTone(PIEZO_PIN);
+    g_pActiveMenu = g_pAlarmRingingMenu;
     //sende funk signal zu Lichtanschaltknopf (wenn in Menü eingeschaltet) / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ 
     g_pMyAlarm1Menu->alarm1_stat = false;
     updateLcdDisplay();
