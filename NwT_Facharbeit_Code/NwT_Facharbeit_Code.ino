@@ -496,7 +496,7 @@ class SetTimeMenu : public AbstractMenu {
       set_time_menu_output[1] = 0;
 
       g_pActiveMenu = g_pPreviousMenu;
-      beforeMenuSwitch();
+      //beforeMenuSwitch();
     }
   }
 };
@@ -583,8 +583,11 @@ class AlarmRingingMenu : public AbstractMenu {
   }
 
   virtual void okPressed(){
+    g_pMyAlarm1Menu->alarm1_stat = false;
+    noTone(PIEZO_PIN);
+
+    g_pActiveMenu = g_pPreviousMenu;
     beforeMenuSwitch();
-    //
   }
 };
 
@@ -616,8 +619,8 @@ void setup() {
   g_pMyAlarm1Menu = new MyAlarm1Menu();
   g_pSetTimeMenu = new SetTimeMenu();
 
-  //g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
-  g_pActiveMenu = g_pAlarmRingingMenu;
+  g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
+  //g_pActiveMenu = g_pAlarmRingingMenu;
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
@@ -734,9 +737,8 @@ void timer() {
 void alarm1() {
   if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute){
     g_pActiveMenu = g_pAlarmRingingMenu;
+    update7Segment;
     //sende funk signal zu Lichtanschaltknopf (wenn in Menü eingeschaltet) / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ 
-    g_pMyAlarm1Menu->alarm1_stat = false;
-    updateLcdDisplay();
   }
 }
 
