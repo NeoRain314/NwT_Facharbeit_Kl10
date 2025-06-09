@@ -37,6 +37,14 @@ volatile bool ok_button_interrupt = false;
 int rtc_hour = 0;
 int rtc_minute = 0;
 
+// Tone Defines
+#define A 440
+
+#define HALBE
+#define VIERTEL
+#define ACHTEL
+
+
 // ... libraries ...................................................................................................................... libraries ... //
 #include <Wire.h>
 #include <Arduino.h>
@@ -114,6 +122,10 @@ class AbstractMenu {
     Serial.println("select not implemented");
   }
 
+  virtual void process() {
+    //
+  }
+
   void beforeMenuSwitch() {
     g_pPreviousMenu = this;
   }
@@ -158,6 +170,7 @@ TimerMenu* g_pTimerMenu = 0;
 StudyMenu* g_pStudyMenu = 0;
 AbstractMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
+AbstractMenu* g_pAlarmRingingMenu = 0;
 
 //setting menus
 MyAlarm1Menu* g_pMyAlarm1Menu = 0;
@@ -307,7 +320,7 @@ class StudyMenu : public AbstractMenu {
       printMenuEntries(selected_index, 4, study_menu_entries); // index, menu_length, menu_entries[]
     }
     
-  }
+  } 
 
   virtual void selectPressed() {
     selected_index = (selected_index + 1) % 4; //damit i nie größer 2
@@ -521,6 +534,45 @@ class MainMenu : public AbstractMenu {
   }
 };
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ AlarmRinging Menu ~~~ //
+
+const int sound1_tones[] = {};
+const int sound1_length[] = {};
+
+int currentSound = 0; 
+
+class AlarmRingingMenu : public AbstractMenu {
+  int selected_index = 0;
+  int i = 0; //index of current tone
+  int c = 0; //counter
+  
+  public:
+
+  virtual void draw(){
+    //draw cat
+  }
+
+  virtual void process() {
+    tone(PIEZO_PIN, sound1_tones[i]);
+    c++;
+    if(c > sound1_length[i]){
+      i++;
+      c = 0;
+    }
+
+    if(i >arr_length(sound1_tones)) i = 0;
+  }
+
+  virtual void selectPressed() {
+    selected_index = (selected_index + 1) % 3; //damit i nie größer 2
+  }
+
+  virtual void okPressed(){
+    beforeMenuSwitch();
+    //
+  }
+};
+
 // <<< setup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< setup <<//
 void setup() {
   Serial.begin(9600); //Serial Monitor
@@ -544,6 +596,7 @@ void setup() {
   g_pStudyMenu = new StudyMenu();
   g_pLedMenu = new LedMenu();
   g_pModulMenu = new ModulMenu();
+  g_pAlarmRingingMenu = new AlarmRingingMenu();
 
   g_pMyAlarm1Menu = new MyAlarm1Menu();
   g_pSetTimeMenu = new SetTimeMenu();
@@ -587,6 +640,7 @@ void loop() {
     ok_button_interrupt = false;
   }
 
+  g_pActiveMenu->process();
   clock();
   
   if(g_pTimerMenu->timer_stat){
