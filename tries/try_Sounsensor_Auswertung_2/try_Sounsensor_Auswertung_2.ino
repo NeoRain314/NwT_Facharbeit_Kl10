@@ -8,8 +8,8 @@ int buttonPinAn = 4;     // Startknopf
 int buttonPinAus = 5;    // Ausknopf
 bool recording = false;  // Startzustand: keine Aufnahme
 
-int abc[100];             // Speicher für Messwerte
-String timeStamps[100];  // Speicher für Zeitstempel
+int soundValues[100];             // Speicher für Messwerte
+DateTime timeStamps[100];  // Speicher für Zeitstempel
 int index = 0;           // Aktuelle Position im Array
 
 void setup() {
@@ -21,8 +21,7 @@ void setup() {
 
   if (!rtc.begin()) {
     Serial.println("RTC nicht gefunden!");
-    while (1)
-      ;
+    while (1);
   }
   Serial.println("Schlafüberwachung gestartet!");
 }
@@ -40,14 +39,20 @@ void loop() {
     // Wenn die Aufnahme gestoppt wurde, Daten ausgeben
     if (index > 0) {
       Serial.println("Messung beendet. Gespeicherte Daten:");
-      float a = 0;
+      float s = 0;
+      String t = "";
       for (int i = 0; i < index; i++) {
         Serial.print("Zeit: ");
-        Serial.print(timeStamps[i]);
+        t = String(timeStamps[i].hour()) + ":" + String(timeStamps[i].minute()) + ":" + String(timeStamps[i].second());
+        Serial.print(t);
+        /*Serial.print(timeStamps[i].hour());
+        Serial.print(":");
+        Serial.print(timeStamps[i].minute());
+        Serial.print(":");
+        Serial.println(timeStamps[i].second());*/
         Serial.print(", Spannung: ");
-        a = abc[i];
-        //a = 3.5;
-        Serial.print(a/1000);
+        s = soundValues[i];
+        Serial.print(s/1000);
         Serial.println(" V");
       }
       index = 0;  // Daten zurücksetzen für nächste Aufnahme
@@ -61,9 +66,9 @@ void loop() {
 
     if (digital_value == 1) {  // Schwellwert überschritten
       if (index < 100) {       // Array nicht überfüllen
-        abc[index] = (int)analog_value;
+        soundValues[index] = (int)analog_value;
         DateTime now = rtc.now();
-        timeStamps[index] = String(now.hour()) + ":" + String(now.minute()) + ":" + String(now.second());
+        timeStamps[index] = now;
         index++;
       }
     }
@@ -82,7 +87,7 @@ void loop() {
         Serial.print("Zeit: ");
         Serial.print(timeStamps[i]);
         Serial.print(", Spannung: ");
-        Serial.print(abc[i]);
+        Serial.print(soundValues[i]);
         Serial.println(" V");
       }
       index = 0; // Daten zurücksetzen für nächste Aufnahme
