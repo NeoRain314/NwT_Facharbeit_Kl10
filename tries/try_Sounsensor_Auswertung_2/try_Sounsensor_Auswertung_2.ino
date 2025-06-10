@@ -9,7 +9,7 @@ int buttonPinAus = 5;    // Ausknopf
 bool recording = false;  // Startzustand: keine Aufnahme
 
 int abc[100];             // Speicher für Messwerte
-String timeStamps[100];  // Speicher für Zeitstempel
+DateTime timeStamps[100];  // Speicher für Zeitstempel
 int index = 0;           // Aktuelle Position im Array
 
 void setup() {
@@ -40,9 +40,16 @@ void loop() {
     if (index > 0) {
       Serial.println("Messung beendet. Gespeicherte Daten:");
       float a = 0;
+      String b = "";
       for (int i = 0; i < index; i++) {
         Serial.print("Zeit: ");
-        Serial.print(timeStamps[i]);
+        /*b = String(timeStamps[i].hour()) + ":" + String(timeStamps[i].minute()) + ":" + String(timeStamps[i].second());
+        Serial.print(b);*/
+        Serial.print(timeStamps[i].hour());
+        Serial.print(":");
+        Serial.print(timeStamps[i].minute());
+        Serial.print(":");
+        Serial.println(timeStamps[i].second());
         Serial.print(", Spannung: ");
         a = abc[i];
         //a = 3.5;
@@ -62,7 +69,7 @@ void loop() {
       if (index < 100) {       // Array nicht überfüllen
         abc[index] = (int)analog_value;
         DateTime now = rtc.now();
-        timeStamps[index] = String(now.hour()) + ":" + String(now.minute()) + ":" + String(now.second());
+        timeStamps[index] = now;
         index++;
       }
     }
