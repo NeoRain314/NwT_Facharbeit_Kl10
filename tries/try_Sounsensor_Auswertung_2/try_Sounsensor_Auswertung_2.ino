@@ -21,8 +21,7 @@ void setup() {
 
   if (!rtc.begin()) {
     Serial.println("RTC nicht gefunden!");
-    while (1)
-      ;
+    while (1);
   }
   Serial.println("Schlafüberwachung gestartet!");
 }
