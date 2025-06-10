@@ -30,10 +30,10 @@ void loop () {
 
 
   Serial.print("A:");
-  Serial.println(2.5);
+  Serial.println(2.49);
 
   Serial.print("B:");
-  Serial.println(2.6);
+  Serial.println(2.51);
   
   if (digital_value == 1) {
       //Serial.println("erreicht");
