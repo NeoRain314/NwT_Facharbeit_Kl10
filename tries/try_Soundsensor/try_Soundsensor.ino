@@ -23,15 +23,23 @@ void loop () {
   digital_value = digitalRead(digital_input);
     
   //... und an dieser Stelle ausgegeben
-  Serial.print("Analoger Spannungswert: "); 
-  Serial.print(analog_value, 4);
-  Serial.print(" V, \t Grenzwert: ");
+  //Serial.print("Analoger Spannungswert: "); 
+  Serial.print("C:");
+  Serial.println(analog_value, 4);
+ // Serial.print(" V, \t Grenzwert: ");
+
+
+  Serial.print("A:");
+  Serial.println(2.5);
+
+  Serial.print("B:");
+  Serial.println(2.6);
   
   if (digital_value == 1) {
-      Serial.println("erreicht");
+      //Serial.println("erreicht");
   }
   else {
-      Serial.println("noch nicht erreicht");
+     // Serial.println("noch nicht erreicht");
   }
   //Serial.println("----------------------------------------------------------------");
   delay(100);
