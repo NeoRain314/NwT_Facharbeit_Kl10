@@ -1,4 +1,5 @@
 #include <Adafruit_NeoPixel.h>
+
 #ifdef __AVR__
 #include <avr/power.h>
 #endif
@@ -55,12 +56,14 @@ void loop() {
 
   neoRainbowAll(10);
 }
+
 void neoClassic(int g, int b, int r){ // einzelne farben normal 
  for(int i = 0; i < NUMPIXELS; i++){
   pixels.setPixelColor(i, pixels.Color(g, b, r));
   pixels.show();
  }
 }
+
  void neoFading(int g, int b, int r, int speed){ // ausgewählte Farben (hier rot) pulsiert
   for (int brightness = 20; brightness <= 255; brightness += speed) {
     neoClassic (g * brightness / 255, b * brightness / 255, r * brightness / 255);

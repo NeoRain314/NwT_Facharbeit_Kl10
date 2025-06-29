@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 /***************************************************************************************
 
 g_... ---> globale Var
@@ -70,6 +66,9 @@ int rtc_minute = 0;
 //7 Segment Display
 #include <TM1637Display.h>
 
+//Neopixels
+#include <Adafruit_NeoPixel.h>
+
 // ... LCD Display .................................................................................................................. LCD Display ... //
 // --> LCD_ / lcd_ //
 
@@ -104,11 +103,29 @@ TM1637Display display(CLK, DIO);
 
 char* intToString(int num, bool leading_zero);
 
+
+// ... Neopixel ............................................................................................................... 7 Segment Display ... //
+#define PIN 9 
+#define NUMPIXELS 8
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel (NUMPIXELS, PIN, NEO_GBR + NEO_KHZ800);
+
+//NeoPixel Colors
+#define NEO_RED 0, 0, 255
+#define NEO_ORANGE 0, 99, 255  
+#define NEO_YELLOW 2, 150, 247
+#define NEO_GREEN  3, 138, 7 
+#define NEO_LIGHTGREEN 3, 252,61
+#define NEO_BLUE  255, 0, 0
+#define NEO_LIGHTBLUE  252, 219, 3
+#define NEO_PURPLE  252, 3, 144 
+#define NEO_PINK  255, 0, 255
+
 // ... Menu Structure ............................................................................................................ Menu Structure ... //
 class AbstractMenu;
 class TimerMenu;
 class MyAlarm1Menu;
 class StudyMenu;
+class LedMenu;
 AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
@@ -173,7 +190,7 @@ AbstractMenu* g_pMainMenu = 0;
 AbstractMenu* g_pAlarmMenu = 0;
 TimerMenu* g_pTimerMenu = 0;
 StudyMenu* g_pStudyMenu = 0;
-AbstractMenu* g_pLedMenu = 0;
+LedMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
 AbstractMenu* g_pAlarmRingingMenu = 0;
 
@@ -357,7 +374,11 @@ class StudyMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LED Menu ~~~ //
 const char* led_menu_entries[] = {"on", "red", "back"};
-const char* led_colors[] = {"red", "orange", "yellow", "green", "lightgreen", "blue", "lightblue", "purple", "pink", "rainbow"};
+const char* led_colors[] = {"red", "orange", "yellow", "green", "lightgreen", "blue", "lightblue", "purple", "pink", "fading", "rainbow1", "rainbow2"};
+
+#define P(r,g,b) ((uint32_t)r << 16) | ((uint32_t)g << 8) | b
+const uint32_t led_colorCodes[] = {P(0, 0, 255), P(0, 40, 255 ), P(0, 99, 255), P(3, 138, 50 ), P(3, 138, 80 ), /**/P(255, 0, 0 ), P(3, 138, 7 ), P(252, 3, 144 ), P(255, 0, 255)};
+#undef P
 
 class LedMenu : public AbstractMenu {
   int selected_index = 0;
@@ -396,6 +417,23 @@ class LedMenu : public AbstractMenu {
     }
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
+
+  void neoClassic(uint32_t c){ // einzelne farben normal 
+    for(int i = 0; i < NUMPIXELS; i++){
+      pixels.setPixelColor(i, c);
+      pixels.show(); //--> außerhalb!!!!!!
+    }
+  } 
+
+  virtual void updateLed(){
+    if(led_mode <= 8){
+      neoClassic(led_colorCodes[led_mode]);
+    }
+  }
+
+  
+
+
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Modul Menu ~~~ //
@@ -619,8 +657,8 @@ void setup() {
   g_pMyAlarm1Menu = new MyAlarm1Menu();
   g_pSetTimeMenu = new SetTimeMenu();
 
-  g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
-  //g_pActiveMenu = g_pAlarmRingingMenu;
+  //g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
+  g_pActiveMenu = g_pLedMenu;
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
@@ -647,6 +685,7 @@ void setup() {
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
 int g_lfu_counter = 0;
+int g_lfu_counter_2 = 0;
 void lowfreqUpdate() { //function so for example the clock doesnt update every cycle because this causes errors (like with the tone() function)
   g_lfu_counter++;
   if(g_lfu_counter > 2040){
@@ -654,12 +693,19 @@ void lowfreqUpdate() { //function so for example the clock doesnt update every c
 
     clock();
     if(g_pTimerMenu->timer_stat){
-    timer();
-  } else if(g_pStudyMenu->study_stat) {
-    studyMode();
-  } else {
-    update7Segment(rtc_hour, rtc_minute);
+      timer();
+    } else if(g_pStudyMenu->study_stat) {
+      studyMode();
+    } else {
+      update7Segment(rtc_hour, rtc_minute);
+    }
   }
+
+  g_lfu_counter_2++;
+  if(g_lfu_counter_2 > 1000){
+    g_lfu_counter_2 = 0;
+    Serial.println("RGB-Update");
+    g_pLedMenu->updateLed();
   }
 }
 
