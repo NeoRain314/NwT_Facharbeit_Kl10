@@ -87,7 +87,7 @@ void neoRainbow (int wait){ // die LEDs bewegen sich einzeln durch den Regenboge
 }
 
 
-  void neoRainbowAll(int wait) { // 8 LEDs zeigen immer die gleiche Farbe die gleichzeitig durch den Regenbogen geht
+void neoRainbowAll(int wait) { // 8 LEDs zeigen immer die gleiche Farbe die gleichzeitig durch den Regenbogen geht
   for (int j = 0; j < 256; j++) {  // Farbverlauf durch 256 Farbstufen
     uint32_t color = Wheel(j & 255); // Farbe für alle LEDs berechnen
     

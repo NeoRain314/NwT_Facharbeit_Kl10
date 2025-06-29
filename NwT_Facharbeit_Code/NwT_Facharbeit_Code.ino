@@ -374,7 +374,7 @@ class StudyMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LED Menu ~~~ //
 const char* led_menu_entries[] = {"on", "red", "back"};
-const char* led_colors[] = {"red", "orange", "yellow", "green", "lightgreen", "blue", "lightblue", "purple", "pink", "fading", "rainbow1", "rainbow2"};
+const char* led_colors[] = {"red", "orange", "yellow", "green", "lightgreen", "blue", "lightblue", "purple", "pink", "rainbow1", "rainbow2"};
 
 #define P(r,g,b) ((uint32_t)r << 16) | ((uint32_t)g << 8) | b
 const uint32_t led_colorCodes[] = {P(0, 0, 255), P(0, 40, 255 ), P(0, 99, 255), P(3, 138, 50 ), P(3, 138, 80 ), /**/P(255, 0, 0 ), P(3, 138, 7 ), P(252, 3, 144 ), P(255, 0, 255)};
@@ -409,7 +409,7 @@ class LedMenu : public AbstractMenu {
     }
     if (selected_index == 1) {
       led_mode ++;
-      if(led_mode > 9) led_mode = 0;
+      if(led_mode > 10) led_mode = 0;
       led_menu_entries[1] = led_colors[led_mode];
       Serial.print(led_mode);
       Serial.print(" - ");
@@ -418,17 +418,64 @@ class LedMenu : public AbstractMenu {
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
 
+  uint32_t Wheel(byte WheelPos) { // wheel()-Funktion sorgt für sanften Farbübergang
+    WheelPos = 255 - WheelPos;
+    if (WheelPos < 85) {
+      return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+    }
+    if (WheelPos < 170) {
+      WheelPos -= 85;
+      return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+    }
+    WheelPos -= 170;
+    return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+
   void neoClassic(uint32_t c){ // einzelne farben normal 
     for(int i = 0; i < NUMPIXELS; i++){
       pixels.setPixelColor(i, c);
-      pixels.show(); //--> außerhalb!!!!!!
     }
   } 
 
+  void neoRainbow (int wait){ // die LEDs bewegen sich einzeln durch den Regenbogen
+    for (int j = 0; j < 256; j++) {  // 256 verschiedene Farbwerte für sanften Übergang
+      for (int i = 0; i < NUMPIXELS; i++) {
+        int hue = (i * 256 / NUMPIXELS) + j;
+        pixels.setPixelColor(i, Wheel(hue & 255)); 
+      }
+      //delay(wait);
+    }
+  }
+
+  void neoRainbowAll(int wait) { // 8 LEDs zeigen immer die gleiche Farbe die gleichzeitig durch den Regenbogen geht
+    for (int j = 0; j < 256; j++) {  // Farbverlauf durch 256 Farbstufen
+      uint32_t color = Wheel(j & 255); // Farbe für alle LEDs berechnen
+      
+      for (int i = 0; i < NUMPIXELS; i++) {
+        pixels.setPixelColor(i, color); // Setze alle LEDs auf die gleiche Farbe
+      }
+
+      pixels.show();
+      //delay(wait);
+    }
+  }
+
   virtual void updateLed(){
+    if(led_stat == false){
+      for(int i = 0; i < NUMPIXELS; i++){
+        pixels.setPixelColor(i, 0, 0, 0);
+      }
+      pixels.show();
+      return;
+    }
+
     if(led_mode <= 8){
       neoClassic(led_colorCodes[led_mode]);
     }
+    if(led_mode == 9) neoRainbow(0);
+    if(led_mode == 10) neoRainbowAll(0);
+
+    pixels.show();
   }
 
   
