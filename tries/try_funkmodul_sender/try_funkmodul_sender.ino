@@ -1,4 +1,5 @@
 #include <RCSwitch.h>
+
 RCSwitch mySwitch = RCSwitch();
 
 void setup() {
