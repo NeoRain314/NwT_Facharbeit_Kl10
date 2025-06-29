@@ -248,7 +248,8 @@ class MyAlarm1Menu : public AbstractMenu {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
-const char* alarm_menu_entries[] = {"Alarm 1", "Alarm 2", "Sound", "back"};
+char* alarm_menu_entries[] = {"Alarm 1", "Sound", "Schlafüberwachung", "back"};
+int recording_sleep = false;
 
 class AlarmMenu : public AbstractMenu {
   int selected_index = 0;
@@ -268,7 +269,15 @@ class AlarmMenu : public AbstractMenu {
     beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pMyAlarm1Menu;
     if (selected_index == 1) g_pActiveMenu = g_pAlarmMenu;
-    if (selected_index == 2) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 2){
+      if(recording_sleep == false){
+        recording_sleep = true;
+        alarm_menu_entries[2] = "Schlafüberwachung beenden";
+      }else{
+        recording_sleep = false;
+        alarm_menu_entries[2] = "Schlafüberwachung starten";
+      }
+    }
     if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
   }
 };

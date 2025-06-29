@@ -5,7 +5,6 @@ int state = 0;
 
 void setup() {
   pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
   Serial.begin(9600); // Default communication rate of the Bluetooth module
 
   
