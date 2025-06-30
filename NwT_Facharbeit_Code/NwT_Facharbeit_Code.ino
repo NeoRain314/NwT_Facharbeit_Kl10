@@ -52,9 +52,13 @@ volatile bool ok_button_interrupt = false;
 
 #define SOUND_ANALOG_PIN A0
 #define SOUND_DIGITAL_PIN 11
+#define MOVEMENTSENSOR_PIN 7
+
 int soundValues[100];      // Speicher für Messwerte
 DateTime timeStamps[100];  // Speicher für Zeitstempel
+int movementValues[100];    
 int sleep_dat_index = 0;
+
 
 
 // RTC Variables
@@ -705,6 +709,9 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(SELECT_BUTTON_PIN), selectButtonISR, RISING); //Rising 0 -> 1
   pinMode(OK_BUTTON_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(OK_BUTTON_PIN), okButtonISR, RISING); //Rising 0 -> 1
+  pinMode(SOUND_ANALOG_PIN, INPUT);
+  pinMode(SOUND_DIGITAL_PIN, INPUT);
+  pinMode(MOVEMENTSENSOR_PIN, INPUT);
   //pinMode(PIEZO_PIN, OUTPUT);
 
   //short test for Piezo
@@ -914,6 +921,7 @@ void recodSleepData(){
   // ~~~~~ Sound ~~~~~~~
   float analog_value = analogRead(SOUND_ANALOG_PIN) * (5.0 / 1023.0) * 1000;
   int digital_value = digitalRead(SOUND_DIGITAL_PIN);
+  int movement_stat = digitalRead(MOVEMENTSENSOR_PIN);
 
   if (digital_value == 1) {  // Schwellwert überschritten
     if (sleep_dat_index < 100) {       // Array nicht überfüllen
@@ -924,10 +932,23 @@ void recodSleepData(){
     }
   }
 
-  Serial.print("Spannung: ");
+  if(movement_stat == 1){
+    if(sleep_dat_index < 100) {
+      movementValues[sleep_dat_index] = movement_stat;
+      DateTime now = rtc.now();
+      timeStamps[sleep_dat_index] = now;
+      sleep_dat_index++;
+    }
+  }
+
+  Serial.print("Sound: ");
   Serial.print(analog_value); 
   Serial.print(" V, \t Status: ");
-  Serial.println(digital_value == 1 ? "Geräusch erkannt!" : "Ruhe...");
+  Serial.println(digital_value == 1 ? "There is a Sound" : "no Sound");
+  Serial.print("Movement: ");
+  Serial.print(movement_stat);
+  Serial.print(" Status: ");
+  Serial.println(movement_stat == 1 ? "There is a Movement" : "no Movement");
   
 }
 
@@ -940,7 +961,7 @@ void sendSleepData(){
     float s = 0;
     String t = "";
     for (int i = 0; i < sleep_dat_index; i++) {
-      Serial.print("Zeit: ");
+      Serial.print("Time: ");
       t = String(timeStamps[i].hour()) + ":" + String(timeStamps[i].minute()) + ":" + String(timeStamps[i].second());
       Serial.print(t);
       /*Serial.print(timeStamps[i].hour());
@@ -948,10 +969,13 @@ void sendSleepData(){
       Serial.print(timeStamps[i].minute());
       Serial.print(":");
       Serial.println(timeStamps[i].second());*/
-      Serial.print(", Spannung: ");
+      Serial.print(", Sound: ");
       s = soundValues[i];
       Serial.print(s/1000);
-      Serial.println(" V");
+      Serial.print(" V");
+
+      Serial.print(", Movement: ");
+      Serial.println(movementValues[i]);
     }
     sleep_dat_index = 0;  // Daten zurücksetzen für nächste Aufnahme !!!!!!!!!!!!!!!!!!!!!!!! vieleicht noch ganz zurücksetzen!!!!!!!!!!!!!!!!
   } else {
