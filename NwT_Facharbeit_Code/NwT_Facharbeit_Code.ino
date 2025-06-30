@@ -126,6 +126,7 @@ class TimerMenu;
 class MyAlarm1Menu;
 class StudyMenu;
 class LedMenu;
+class AlarmMenu;
 AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
@@ -187,7 +188,7 @@ class AbstractMenu {
 AbstractMenu* g_pActiveMenu = 0;
 //main menus 
 AbstractMenu* g_pMainMenu = 0;
-AbstractMenu* g_pAlarmMenu = 0;
+AlarmMenu* g_pAlarmMenu = 0;
 TimerMenu* g_pTimerMenu = 0;
 StudyMenu* g_pStudyMenu = 0;
 LedMenu* g_pLedMenu = 0;
@@ -225,36 +226,19 @@ class MyAlarm1Menu : public AbstractMenu {
     selected_index = (selected_index + 1) % 3; //damit i nie größer 2
   }
 
-  virtual void okPressed(){
-    if (selected_index == 0) { //switch between on and off
-      if(alarm1_stat){
-        alarm1_stat = false;
-        myalarm1_menu_entries[0] = "off";
-      }else{
-        alarm1_stat = true;
-        myalarm1_menu_entries[0] = "on";
-      }
-    }
-    if (selected_index == 1) {
-      beforeMenuSwitch();
-      g_pActiveMenu = g_pSetTimeMenu;
-    }
-    if (selected_index == 2) {
-      beforeMenuSwitch();
-      g_pActiveMenu = g_pAlarmMenu;
-    }
-    
-  }
+  virtual void okPressed();
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
 char* alarm_menu_entries[] = {"Alarm", "Sound", "Tracking", "back"};
-int recording_sleep = false;
+
 
 class AlarmMenu : public AbstractMenu {
   int selected_index = 0;
   
   public:
+
+  bool recording_sleep = false;
 
   virtual void draw(){
     printMenuBar("Alarm Menu");
@@ -281,6 +265,28 @@ class AlarmMenu : public AbstractMenu {
     if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
   }
 };
+
+
+void MyAlarm1Menu::okPressed() {
+    if (selected_index == 0) { //switch between on and off
+      if(alarm1_stat){
+        alarm1_stat = false;
+        myalarm1_menu_entries[0] = "off";
+      }else{
+        alarm1_stat = true;
+        myalarm1_menu_entries[0] = "on";
+      }
+    }
+    if (selected_index == 1) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pSetTimeMenu;
+    }
+    if (selected_index == 2) {
+      beforeMenuSwitch();
+      g_pActiveMenu = g_pAlarmMenu;
+    }
+    
+  }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
 const char* timer_menu_entries[] = {"new Timer", "Sound", "back"};
@@ -762,7 +768,7 @@ void lowfreqUpdate() { //function so for example the clock doesnt update every c
     g_lfu_counter_2 = 0;
     Serial.println("RGB-Update");
     g_pLedMenu->updateLed();
-    if(recording_sleep) recodSleepData();
+    if(g_pAlarmMenu->recording_sleep) recodSleepData();
   }
 }
 
