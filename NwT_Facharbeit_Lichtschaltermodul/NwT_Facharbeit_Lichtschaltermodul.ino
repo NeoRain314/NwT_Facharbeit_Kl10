@@ -18,6 +18,7 @@ void loop() {
     Serial.println(receivedValue);
     if (receivedValue == 1234) { 
       tunServo();
+      Serial.println(receivedValue);
     }
     mySwitch.resetAvailable();
   }
