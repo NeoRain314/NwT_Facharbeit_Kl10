@@ -672,9 +672,6 @@ const int sound3_tones[] = {A, PAUSE, A};
 const int sound3_length[] = {ACHTEL, ACHTEL, ACHTEL};
 
 
-int curr_sound_tones[10] = {};
-int curr_sound_length[10] = {};
-
 
 class AlarmRingingMenu : public AbstractMenu {
   int i = 0; //index of current tone
@@ -714,14 +711,7 @@ class AlarmRingingMenu : public AbstractMenu {
     }
     
 
-    tone(PIEZO_PIN, array_pointer_tones[i]);
-    c++;
-    if(c > array_pointer_length[i]){
-      i++;
-      c = 0;
-    }
-
-    if(i > arr_length(array_pointer_tones)) i = 0;
+    ringAlarm(array_pointer_tones, array_pointer_length, sound_array_length);
   }
 
   virtual void selectPressed() {
@@ -733,6 +723,17 @@ class AlarmRingingMenu : public AbstractMenu {
 
     g_pActiveMenu = g_pPreviousMenu;
     beforeMenuSwitch();
+  }
+
+  void ringAlarm(int* tones, int* tone_lengths, int sound_length){
+    tone(PIEZO_PIN, tones[i]);
+    c++;
+    if(c > tone_lengths[i]){
+      i++;
+      c = 0;
+    }
+
+    if(i > sound_length) i = 0;
   }
 };
 
@@ -874,6 +875,7 @@ void timer() {
     Serial.println("");
     Serial.println("-----------------------");
     Serial.println("Timer ended!");
+
     return;
   }
 
