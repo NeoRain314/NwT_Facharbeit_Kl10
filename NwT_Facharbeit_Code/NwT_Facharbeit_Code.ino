@@ -1,6 +1,8 @@
 
 
 
+
+
 /***************************************************************************************
 
 g_... ---> globale Var
@@ -36,6 +38,9 @@ Benennung:
 
 //Neopixels
 #include <Adafruit_NeoPixel.h>
+
+//Funk
+#include <RCSwitch.h>
 
 
 // <<< Inizalizing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Initalizing <<//
@@ -90,6 +95,9 @@ const int sound2_length[] = {VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTE
 
 const int sound3_tones[] = {A, PAUSE, A};
 const int sound3_length[] = {ACHTEL, ACHTEL, ACHTEL};
+
+// .. Funk ................................................................................................................................. Funk ... //
+RCSwitch mySwitch = RCSwitch();
 
 
 // ... LCD Display .................................................................................................................. LCD Display ... //
@@ -151,6 +159,7 @@ class StudyMenu;
 class LedMenu;
 class AlarmMenu;
 class AlarmRingingMenu;
+class ModulMenu;
 AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
@@ -216,7 +225,7 @@ AlarmMenu* g_pAlarmMenu = 0;
 TimerMenu* g_pTimerMenu = 0;
 StudyMenu* g_pStudyMenu = 0;
 LedMenu* g_pLedMenu = 0;
-AbstractMenu* g_pModulMenu = 0;
+ModulMenu* g_pModulMenu = 0;
 AlarmRingingMenu* g_pAlarmRingingMenu = 0;
 
 //setting menus
@@ -588,12 +597,15 @@ class LedMenu : public AbstractMenu {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Modul Menu ~~~ //
-const char* modul_menu_entries[] = {"Punkt 1", "Punkt 2", "back"};
+const char* modul_menu_entries[] = {"Light:off", "Alarm:off", "back"};
 
 class ModulMenu : public AbstractMenu {
   int selected_index = 0;
   
   public:
+  
+  bool light_modul_stat = true;
+  bool alarm_modul_stat = false;
 
   virtual void draw(){
     printMenuBar("Modul Menu");
@@ -606,8 +618,16 @@ class ModulMenu : public AbstractMenu {
 
   virtual void okPressed(){
     beforeMenuSwitch();
-    if (selected_index == 0) g_pActiveMenu = g_pModulMenu;
-    if (selected_index == 1) g_pActiveMenu = g_pModulMenu;
+    if (selected_index == 0)  {
+      light_modul_stat = !light_modul_stat;
+      if(light_modul_stat) modul_menu_entries[0] = "Light:on";
+      if(!light_modul_stat) modul_menu_entries[0] = "Light:off";
+    }
+    if (selected_index == 1) {
+      alarm_modul_stat = !alarm_modul_stat;
+      if(alarm_modul_stat) modul_menu_entries[1] = "Alarm:on";
+      if(!alarm_modul_stat) modul_menu_entries[1] = "Alarm:off";
+    }
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
 };
@@ -744,7 +764,14 @@ class AlarmRingingMenu : public AbstractMenu {
   }
 
   void process() {
-    if(ringingModule == 1) ringAlarm(g_pAlarmMenu->array_pointer_tones, g_pAlarmMenu->array_pointer_length, g_pAlarmMenu->sound_array_length);
+    if(ringingModule == 1) {
+      mySwitch.send(1234, 24);
+      ringingModule = 3;
+    }
+    if(ringingModule == 3) {
+      ringAlarm(g_pAlarmMenu->array_pointer_tones, g_pAlarmMenu->array_pointer_length, g_pAlarmMenu->sound_array_length);
+      if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
+    }
     if(ringingModule == 2) ringAlarm(g_pTimerMenu->array_pointer_tones, g_pTimerMenu->array_pointer_length, g_pTimerMenu->sound_array_length);
   }
 
@@ -762,8 +789,8 @@ class AlarmRingingMenu : public AbstractMenu {
   }
 
   void ringAlarm(int* tones, int* tone_lengths, int sound_length){
-    if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH); 
     tone(PIEZO_PIN, tones[i]);
+    if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH);
     c++;
     if(c > tone_lengths[i]){
       i++;
@@ -793,6 +820,8 @@ void setup() {
   //tone(PIEZO_PIN, 600);
   //delay(1000);
   noTone(PIEZO_PIN);
+
+  
 
 
   // ... Menu Structure ............................................................................................................ Menu Structure ... //
@@ -827,10 +856,14 @@ void setup() {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
-  // ... 7 Segment Display ........................................................................................................ Real Time Clock ... //
+  // ... 7 Segment Display ...................................................................................................... 7 Segment Display ... //
   display.setBrightness(0x0f);
   uint8_t data[] = { 255, 255, 255, 255 };
   display.setSegments(data);
+
+  // ... Funk ................................................................................................................................ Funk ... //
+  mySwitch.enableTransmit(10);  // Der Sender wird an Pin 10 angeschlossen
+
 }
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//

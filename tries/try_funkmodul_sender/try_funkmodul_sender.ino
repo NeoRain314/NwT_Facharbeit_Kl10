@@ -3,7 +3,7 @@
 RCSwitch mySwitch = RCSwitch();
 
 void setup() {
-  mySwitch.enableTransmit(10);  // Der Sender wird an Pin 10 angeschlossen
+  mySwitch.enableTransmit(12);  // Der Sender wird an Pin 10 angeschlossen
   Serial.begin(9600);
   Serial.println("Start Sender");
 }
