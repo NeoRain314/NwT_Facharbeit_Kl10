@@ -59,6 +59,7 @@ DateTime timeStamps[100];  // Speicher für Zeitstempel
 int movementValues[100];    
 int sleep_dat_index = 0;
 
+#define VIBRATION_PIN 4
 
 
 // RTC Variables
@@ -261,6 +262,7 @@ class AlarmMenu : public AbstractMenu {
   
   public:
 
+  bool vibration_stat = true;
   bool recording_sleep = false;
   int selected_alarmsound = 0;
   int sound_array_length = arr_length(sound0_tones);
@@ -305,7 +307,8 @@ class AlarmMenu : public AbstractMenu {
       }
 
     }
-    if (selected_index == 2){
+    if(selected_index == 2) vibration_stat = !vibration_stat;
+    if (selected_index == 3){
       if(recording_sleep == false){
         recording_sleep = true;
         alarm_menu_entries[2] = "stopTrak";
@@ -315,7 +318,7 @@ class AlarmMenu : public AbstractMenu {
         sendSleepData();
       }
     }
-    if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
+    if (selected_index == 4) g_pActiveMenu = g_pMainMenu;
   }
 };
 
@@ -748,12 +751,14 @@ class AlarmRingingMenu : public AbstractMenu {
     if(ringingModule == 1) g_pMyAlarm1Menu->alarm1_stat = false;
     if(ringingModule == 2) g_pTimerMenu->timer_stat = false;
     noTone(PIEZO_PIN);
+    digitalWrite(VIBRATION_PIN, LOW);
 
     g_pActiveMenu = g_pPreviousMenu;
     beforeMenuSwitch();
   }
 
   void ringAlarm(int* tones, int* tone_lengths, int sound_length){
+    if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH); 
     tone(PIEZO_PIN, tones[i]);
     c++;
     if(c > tone_lengths[i]){
@@ -776,6 +781,8 @@ void setup() {
   pinMode(SOUND_ANALOG_PIN, INPUT);
   pinMode(SOUND_DIGITAL_PIN, INPUT);
   pinMode(MOVEMENTSENSOR_PIN, INPUT);
+  pinMode(VIBRATION_PIN, OUTPUT);
+
   //pinMode(PIEZO_PIN, OUTPUT);
 
   //short test for Piezo
