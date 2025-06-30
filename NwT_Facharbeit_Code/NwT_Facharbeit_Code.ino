@@ -254,7 +254,7 @@ class MyAlarm1Menu : public AbstractMenu {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
-char* alarm_menu_entries[] = {"Alarm 1", "Sound 1", "Tracking", "back"};
+char* alarm_menu_entries[] = {"Alarm 1", "Sound 1", "Vibr.on", "Tracking", "back"};
 void sendSleepData();
 
 class AlarmMenu : public AbstractMenu {
@@ -271,11 +271,11 @@ class AlarmMenu : public AbstractMenu {
 
   virtual void draw(){
     printMenuBar("Alarm Menu");
-    printMenuEntries(selected_index, 4, alarm_menu_entries); // index, menu_length, menu_entries[]
+    printMenuEntries(selected_index, 5, alarm_menu_entries); // index, menu_length, menu_entries[]
   }
 
   virtual void selectPressed() {
-    selected_index = (selected_index + 1) % 4; //damit i nie größer 
+    selected_index = (selected_index + 1) % 5; //damit i nie größer 
   }
 
   virtual void okPressed(){
@@ -307,14 +307,18 @@ class AlarmMenu : public AbstractMenu {
       }
 
     }
-    if(selected_index == 2) vibration_stat = !vibration_stat;
+    if(selected_index == 2) {
+      vibration_stat = !vibration_stat;
+      if(vibration_stat) alarm_menu_entries[2] = "Vibr.on";
+      if(!vibration_stat) alarm_menu_entries[2] = "Vibr.off";
+    }
     if (selected_index == 3){
       if(recording_sleep == false){
         recording_sleep = true;
-        alarm_menu_entries[2] = "stopTrak";
+        alarm_menu_entries[3] = "stopTrak";
       }else{
         recording_sleep = false;
-        alarm_menu_entries[2] = "startTrack";
+        alarm_menu_entries[3] = "startTrack";
         sendSleepData();
       }
     }
