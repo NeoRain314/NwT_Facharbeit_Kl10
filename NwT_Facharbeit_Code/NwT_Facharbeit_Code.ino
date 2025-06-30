@@ -77,6 +77,19 @@ int rtc_minute = 0;
 #define VIERTEL 2000
 #define ACHTEL 1000
 
+//Sounds
+const int sound0_tones[] = {A, E, G};
+const int sound0_length[] = {ACHTEL, ACHTEL, HALBE};
+
+const int sound1_tones[] = {A, PAUSE, A, PAUSE};
+const int sound1_length[] = {ACHTEL, ACHTEL, ACHTEL, ACHTEL};
+
+const int sound2_tones[] = {C, E, G, CZWEI,  G, E};
+const int sound2_length[] = {VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL};
+
+const int sound3_tones[] = {A, PAUSE, A};
+const int sound3_length[] = {ACHTEL, ACHTEL, ACHTEL};
+
 
 // ... LCD Display .................................................................................................................. LCD Display ... //
 // --> LCD_ / lcd_ //
@@ -136,6 +149,7 @@ class MyAlarm1Menu;
 class StudyMenu;
 class LedMenu;
 class AlarmMenu;
+class AlarmRingingMenu;
 AbstractMenu* g_pPreviousMenu = 0;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abstract Menu ~~~ //
@@ -202,7 +216,7 @@ TimerMenu* g_pTimerMenu = 0;
 StudyMenu* g_pStudyMenu = 0;
 LedMenu* g_pLedMenu = 0;
 AbstractMenu* g_pModulMenu = 0;
-AbstractMenu* g_pAlarmRingingMenu = 0;
+AlarmRingingMenu* g_pAlarmRingingMenu = 0;
 
 //setting menus
 MyAlarm1Menu* g_pMyAlarm1Menu = 0;
@@ -249,6 +263,9 @@ class AlarmMenu : public AbstractMenu {
 
   bool recording_sleep = false;
   int selected_alarmsound = 0;
+  int sound_array_length = arr_length(sound0_tones);
+  const int* array_pointer_tones = sound0_tones;
+  const int* array_pointer_length = sound0_length;
 
   virtual void draw(){
     printMenuBar("Alarm Menu");
@@ -265,6 +282,28 @@ class AlarmMenu : public AbstractMenu {
     if (selected_index == 1) {
       selected_alarmsound = (selected_alarmsound + 1) % 4;
       alarm_menu_entries[1][6] = '1' + selected_alarmsound;
+
+      if(g_pAlarmMenu->selected_alarmsound == 0){
+        sound_array_length = arr_length(sound0_tones);
+        array_pointer_tones = sound0_tones;
+        array_pointer_length = sound0_length;
+      }
+      if(g_pAlarmMenu->selected_alarmsound == 1){
+        sound_array_length = arr_length(sound1_tones);
+        array_pointer_tones = sound1_tones;
+        array_pointer_length = sound1_length;
+      }
+      if(g_pAlarmMenu->selected_alarmsound == 2){
+        sound_array_length = arr_length(sound2_tones);
+        array_pointer_tones = sound2_tones;
+        array_pointer_length = sound2_length;
+      }
+      if(g_pAlarmMenu->selected_alarmsound == 3){
+        sound_array_length = arr_length(sound3_tones);
+        array_pointer_tones = sound3_tones;
+        array_pointer_length = sound3_length;
+      }
+
     }
     if (selected_index == 2){
       if(recording_sleep == false){
@@ -317,6 +356,10 @@ class TimerMenu : public AbstractMenu {
   unsigned long timer_time_mill = 0;
   int selected_timersound = 0;
 
+  int sound_array_length = arr_length(sound0_tones);
+  const int* array_pointer_tones = sound0_tones;
+  const int* array_pointer_length = sound0_length;
+
   virtual void draw(){
     if(timer_stat) timer_menu_entries[0] = "stop Timer"; else timer_menu_entries[0] = "new Timer";
     printMenuBar("Timer Menu");
@@ -344,6 +387,27 @@ class TimerMenu : public AbstractMenu {
     if (selected_index == 1) {
       selected_timersound = (selected_timersound + 1) % 4;
       timer_menu_entries[1][6] = '1' + selected_timersound;
+
+      if(selected_timersound == 0){
+        sound_array_length = arr_length(sound0_tones);
+        array_pointer_tones = sound0_tones;
+        array_pointer_length = sound0_length;
+      }
+      if(selected_timersound == 1){
+        sound_array_length = arr_length(sound1_tones);
+        array_pointer_tones = sound1_tones;
+        array_pointer_length = sound1_length;
+      }
+      if(selected_timersound == 2){
+        sound_array_length = arr_length(sound2_tones);
+        array_pointer_tones = sound2_tones;
+        array_pointer_length = sound2_length;
+      }
+      if(selected_timersound == 3){
+        sound_array_length = arr_length(sound3_tones);
+        array_pointer_tones = sound3_tones;
+        array_pointer_length = sound3_length;
+      }
     }
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
@@ -659,25 +723,13 @@ class MainMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ AlarmRinging Menu ~~~ //
 
-const int sound0_tones[] = {A, E, G};
-const int sound0_length[] = {ACHTEL, ACHTEL, HALBE};
-
-const int sound1_tones[] = {A, PAUSE, A, PAUSE};
-const int sound1_length[] = {ACHTEL, ACHTEL, ACHTEL, ACHTEL};
-
-const int sound2_tones[] = {C, E, G, CZWEI,  G, E};
-const int sound2_length[] = {VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL};
-
-const int sound3_tones[] = {A, PAUSE, A};
-const int sound3_length[] = {ACHTEL, ACHTEL, ACHTEL};
-
-
-
 class AlarmRingingMenu : public AbstractMenu {
   int i = 0; //index of current tone
   int c = 0; //counter
   
   public:
+
+  int ringingModule = 0; //1 --> Alarm; 2 --> Timer
 
   virtual void draw(){
     printMenuBar("Alarm is ringing");
@@ -685,40 +737,16 @@ class AlarmRingingMenu : public AbstractMenu {
   }
 
   void process() {
-    int sound_array_length;
-    const int* array_pointer_tones;
-    const int* array_pointer_length;
-
-    if(g_pAlarmMenu->selected_alarmsound == 0){
-      sound_array_length = arr_length(sound0_tones);
-      array_pointer_tones = sound0_tones;
-      array_pointer_length = sound0_length;
-    }
-    if(g_pAlarmMenu->selected_alarmsound == 1){
-      sound_array_length = arr_length(sound1_tones);
-      array_pointer_tones = sound1_tones;
-      array_pointer_length = sound1_length;
-    }
-    if(g_pAlarmMenu->selected_alarmsound == 2){
-      sound_array_length = arr_length(sound2_tones);
-      array_pointer_tones = sound2_tones;
-      array_pointer_length = sound2_length;
-    }
-    if(g_pAlarmMenu->selected_alarmsound == 3){
-      sound_array_length = arr_length(sound3_tones);
-      array_pointer_tones = sound3_tones;
-      array_pointer_length = sound3_length;
-    }
-    
-
-    ringAlarm(array_pointer_tones, array_pointer_length, sound_array_length);
+    if(ringingModule == 1) ringAlarm(g_pAlarmMenu->array_pointer_tones, g_pAlarmMenu->array_pointer_length, g_pAlarmMenu->sound_array_length);
+    if(ringingModule == 2) ringAlarm(g_pTimerMenu->array_pointer_tones, g_pTimerMenu->array_pointer_length, g_pTimerMenu->sound_array_length);
   }
 
   virtual void selectPressed() {
   }
 
   virtual void okPressed(){
-    g_pMyAlarm1Menu->alarm1_stat = false;
+    if(ringingModule == 1) g_pMyAlarm1Menu->alarm1_stat = false;
+    if(ringingModule == 2) g_pTimerMenu->timer_stat = false;
     noTone(PIEZO_PIN);
 
     g_pActiveMenu = g_pPreviousMenu;
@@ -871,11 +899,14 @@ void clock() {
 // ... Timer .......................................................................................................... Timer ... //
 void timer() {
   if(millis() > g_pTimerMenu->timer_start_mill + g_pTimerMenu->timer_time_mill) {
-    g_pTimerMenu->timer_stat = false;
     Serial.println("");
     Serial.println("-----------------------");
     Serial.println("Timer ended!");
 
+    //g_pAlarmRingingMenu->ringAlarm(g_pTimerMenu->array_pointer_tones, g_pTimerMenu->array_pointer_length, g_pTimerMenu->sound_array_length);
+    g_pAlarmRingingMenu->ringingModule = 2;
+    g_pActiveMenu = g_pAlarmRingingMenu;
+    update7Segment;
     return;
   }
 
@@ -895,6 +926,7 @@ void timer() {
 // ... Alarms ............................................................................................................................ Alarms ... //
 void alarm1() {
   if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute){
+    g_pAlarmRingingMenu->ringingModule = 1;
     g_pActiveMenu = g_pAlarmRingingMenu;
     update7Segment;
     //sende funk signal zu Lichtanschaltknopf (wenn in Menü eingeschaltet) / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ 
