@@ -9,7 +9,7 @@ void setup() {
 }
 
 void loop() {
-  if (mySwitch.available()){ // Wenn ein Code Empfangen wird...
+  if(mySwitch.available()){ // Wenn ein Code Empfangen wird...
     int value = mySwitch.getReceivedValue(); // Empfangene Daten werden unter der Variable "value" gespeichert.
     if (value == 0){ // Wenn die Empfangenen Daten "0" sind, wird "Unbekannter Code" angezeigt.
       Serial.println("Unbekannter Code");

@@ -765,7 +765,7 @@ class AlarmRingingMenu : public AbstractMenu {
 
   void process() {
     if(ringingModule == 3) {
-      //if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
+      if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
       delay(100);
       ringingModule = 1;
     }
