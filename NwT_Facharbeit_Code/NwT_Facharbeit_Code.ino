@@ -239,7 +239,7 @@ class MyAlarm1Menu : public AbstractMenu {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
-char* alarm_menu_entries[] = {"Alarm", "Sound", "Tracking", "back"};
+char* alarm_menu_entries[] = {"Alarm 1", "Sound 1", "Tracking", "back"};
 void sendSleepData();
 
 class AlarmMenu : public AbstractMenu {
@@ -248,6 +248,7 @@ class AlarmMenu : public AbstractMenu {
   public:
 
   bool recording_sleep = false;
+  int selected_alarmsound = 0;
 
   virtual void draw(){
     printMenuBar("Alarm Menu");
@@ -255,13 +256,16 @@ class AlarmMenu : public AbstractMenu {
   }
 
   virtual void selectPressed() {
-    selected_index = (selected_index + 1) % 4; //damit i nie größer 2
+    selected_index = (selected_index + 1) % 4; //damit i nie größer 
   }
 
   virtual void okPressed(){
     beforeMenuSwitch();
     if (selected_index == 0) g_pActiveMenu = g_pMyAlarm1Menu;
-    if (selected_index == 1) g_pActiveMenu = g_pAlarmMenu;
+    if (selected_index == 1) {
+      selected_alarmsound = (selected_alarmsound + 1) % 4;
+      alarm_menu_entries[1][6] = '1' + selected_alarmsound;
+    }
     if (selected_index == 2){
       if(recording_sleep == false){
         recording_sleep = true;
@@ -299,7 +303,7 @@ void MyAlarm1Menu::okPressed() {
   }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Timer Menu ~~~ //
-const char* timer_menu_entries[] = {"new Timer", "Sound", "back"};
+char* timer_menu_entries[] = {"new Timer", "Sound 1", "back"};
 int timer_time[] = {0, 0};
 
 
@@ -311,6 +315,7 @@ class TimerMenu : public AbstractMenu {
   bool timer_stat = false;
   unsigned long timer_start_mill = 0;
   unsigned long timer_time_mill = 0;
+  int selected_timersound = 0;
 
   virtual void draw(){
     if(timer_stat) timer_menu_entries[0] = "stop Timer"; else timer_menu_entries[0] = "new Timer";
@@ -336,7 +341,10 @@ class TimerMenu : public AbstractMenu {
 
       
     }
-    if (selected_index == 1) g_pActiveMenu = g_pTimerMenu;
+    if (selected_index == 1) {
+      selected_timersound = (selected_timersound + 1) % 4;
+      timer_menu_entries[1][6] = '1' + selected_timersound;
+    }
     if (selected_index == 2) g_pActiveMenu = g_pMainMenu;
   }
 };
@@ -662,6 +670,7 @@ const int sound2_length[] = {VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTEL, VIERTE
 
 const int sound3_tones[] = {A, PAUSE, A};
 const int sound3_length[] = {ACHTEL, ACHTEL, ACHTEL};
+
 
 int curr_sound_tones[10] = {};
 int curr_sound_length[10] = {};
