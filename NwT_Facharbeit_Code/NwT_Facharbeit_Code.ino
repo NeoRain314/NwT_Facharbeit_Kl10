@@ -764,13 +764,14 @@ class AlarmRingingMenu : public AbstractMenu {
   }
 
   void process() {
-    if(ringingModule == 1) {
-      mySwitch.send(1234, 24);
-      ringingModule = 3;
-    }
     if(ringingModule == 3) {
+      //if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
+      delay(100);
+      ringingModule = 1;
+    }
+    if(ringingModule == 1) {
       ringAlarm(g_pAlarmMenu->array_pointer_tones, g_pAlarmMenu->array_pointer_length, g_pAlarmMenu->sound_array_length);
-      if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
+      //if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
     }
     if(ringingModule == 2) ringAlarm(g_pTimerMenu->array_pointer_tones, g_pTimerMenu->array_pointer_length, g_pTimerMenu->sound_array_length);
   }
@@ -781,6 +782,7 @@ class AlarmRingingMenu : public AbstractMenu {
   virtual void okPressed(){
     if(ringingModule == 1) g_pMyAlarm1Menu->alarm1_stat = false;
     if(ringingModule == 2) g_pTimerMenu->timer_stat = false;
+    ringingModule = 0;
     noTone(PIEZO_PIN);
     digitalWrite(VIBRATION_PIN, LOW);
 
@@ -790,7 +792,7 @@ class AlarmRingingMenu : public AbstractMenu {
 
   void ringAlarm(int* tones, int* tone_lengths, int sound_length){
     tone(PIEZO_PIN, tones[i]);
-    if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH);
+    //if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH);
     c++;
     if(c > tone_lengths[i]){
       i++;
@@ -969,8 +971,8 @@ void timer() {
 
 // ... Alarms ............................................................................................................................ Alarms ... //
 void alarm1() {
-  if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute){
-    g_pAlarmRingingMenu->ringingModule = 1;
+  if (/*alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute*/true){
+    if(g_pAlarmRingingMenu->ringingModule == 0) g_pAlarmRingingMenu->ringingModule = 3;
     g_pActiveMenu = g_pAlarmRingingMenu;
     update7Segment;
     //sende funk signal zu Lichtanschaltknopf (wenn in Menü eingeschaltet) / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ 
