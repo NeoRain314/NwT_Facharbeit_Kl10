@@ -2,19 +2,20 @@
 #include <RTClib.h>  // RTC-Bibliothek
 RTC_DS3231 rtc;
 
-int analog_input = A0;   // Mikrofon-Signal
-int digital_input = 11;   // Schwellwert-Signal
+int bewegung = 7;
+int bewegungsstatus = 0;
+
 int buttonPinAn = 2;     // Startknopf
 int buttonPinAus = 3;    // Ausknopf
 bool recording = false;  // Startzustand: keine Aufnahme
 
 int soundValues[100];             // Speicher für Messwerte
+int movementValues[100];    
 DateTime timeStamps[100];  // Speicher für Zeitstempel
 int index = 0;           // Aktuelle Position im Array
 
 void setup() {
-  pinMode(analog_input, INPUT);
-  pinMode(digital_input, INPUT);
+  pinMode(bewegung, INPUT);
   pinMode(buttonPinAn, INPUT_PULLUP);
   pinMode(buttonPinAus, INPUT_PULLUP);
   Serial.begin(9600);
@@ -50,10 +51,9 @@ void loop() {
         Serial.print(timeStamps[i].minute());
         Serial.print(":");
         Serial.println(timeStamps[i].second());*/
-        Serial.print(", Spannung: ");
-        s = soundValues[i];
-        Serial.print(s/1000);
-        Serial.println(" V");
+        Serial.print(", Movement: ");
+        s = movementValues[i];
+        Serial.println(s);
       }
       index = 0;  // Daten zurücksetzen für nächste Aufnahme
     } else {
@@ -61,23 +61,21 @@ void loop() {
     }
   }
   if (recording) {
-    float analog_value = analogRead(analog_input) * (5.0 / 1023.0) * 1000;
-    int digital_value = digitalRead(digital_input);
+    	bewegungsstatus = digitalRead (bewegung);
 
-
-    if (digital_value == 1) {  // Schwellwert überschritten
+    if (bewegungsstatus == 1) {  // Schwellwert überschritten
       if (index < 100) {       // Array nicht überfüllen
-        soundValues[index] = (int)analog_value;
+        movementValues[index] = 1;
         DateTime now = rtc.now();
         timeStamps[index] = now;
         index++;
       }
     }
 
-    Serial.print("Spannung: ");
-    Serial.print(analog_value);
-    Serial.print(" V, \t Status: ");
-    Serial.println(digital_value == 1 ? "Geräusch erkannt!" : "Ruhe...");
+    Serial.print("Bewegung: ");
+    Serial.print(bewegungsstatus);
+    Serial.print("Status: ");
+    Serial.println(bewegungsstatus == 1 ? "Bewegung erkannt!" : "Nix...");
 
 
     delay(100);  // Zeit zwischen Messungen
