@@ -688,14 +688,40 @@ class AlarmRingingMenu : public AbstractMenu {
   }
 
   void process() {
-    tone(PIEZO_PIN, sound3_tones[i]);
+    int sound_array_length;
+    const int* array_pointer_tones;
+    const int* array_pointer_length;
+
+    if(g_pAlarmMenu->selected_alarmsound == 0){
+      sound_array_length = arr_length(sound0_tones);
+      array_pointer_tones = sound0_tones;
+      array_pointer_length = sound0_length;
+    }
+    if(g_pAlarmMenu->selected_alarmsound == 1){
+      sound_array_length = arr_length(sound1_tones);
+      array_pointer_tones = sound1_tones;
+      array_pointer_length = sound1_length;
+    }
+    if(g_pAlarmMenu->selected_alarmsound == 2){
+      sound_array_length = arr_length(sound2_tones);
+      array_pointer_tones = sound2_tones;
+      array_pointer_length = sound2_length;
+    }
+    if(g_pAlarmMenu->selected_alarmsound == 3){
+      sound_array_length = arr_length(sound3_tones);
+      array_pointer_tones = sound3_tones;
+      array_pointer_length = sound3_length;
+    }
+    
+
+    tone(PIEZO_PIN, array_pointer_tones[i]);
     c++;
-    if(c > sound3_length[i]){
+    if(c > array_pointer_length[i]){
       i++;
       c = 0;
     }
 
-    if(i > arr_length(sound3_tones)) i = 0;
+    if(i > arr_length(array_pointer_tones)) i = 0;
   }
 
   virtual void selectPressed() {
