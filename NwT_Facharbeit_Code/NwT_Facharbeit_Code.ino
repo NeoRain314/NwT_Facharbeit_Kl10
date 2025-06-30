@@ -447,7 +447,7 @@ class StudyMenu : public AbstractMenu {
   unsigned long studytimer_start_mill = 0;
   unsigned long studytimer_time_mill = 0;
 
-  bool study_pause = false; //pause or fucus
+  bool study_pause = true; //pause or fucus
   int study_curr_repetition = 0; //current repetition
 
   virtual void draw(){
@@ -1000,13 +1000,15 @@ void studyMode(){
 
   //Serial.println( g_pStudyMenu->study_curr_repetition);
 
-  if(millis() > g_pStudyMenu->studytimer_start_mill + g_pStudyMenu->studytimer_time_mill || g_pStudyMenu->study_curr_repetition == 0) {
+  if((millis() > (g_pStudyMenu->studytimer_start_mill + g_pStudyMenu->studytimer_time_mill)) || (g_pStudyMenu->study_curr_repetition == 0 && g_pStudyMenu->study_pause == true)) {
     if(g_pStudyMenu->study_curr_repetition == g_pStudyMenu->study_repetitions){
       g_pStudyMenu->study_curr_repetition = 0;
       g_pStudyMenu->study_stat = false;
+      g_pStudyMenu->study_pause = false;
       return;
     }
     if(g_pStudyMenu->study_pause == false){
+  Serial.println("pause");
       //next pause
       g_pStudyMenu->study_pause = true;
       studytimer_time[0] = 0;
@@ -1020,6 +1022,7 @@ void studyMode(){
 
     } else {
       //next focus
+  Serial.println("Focus");
       g_pStudyMenu->study_pause = false;
       studytimer_time[0] = 0;
       studytimer_time[1] = focus_times[g_pStudyMenu->study_mode];
