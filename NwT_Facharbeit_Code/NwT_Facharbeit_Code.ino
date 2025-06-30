@@ -236,7 +236,7 @@ class MyAlarm1Menu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
 char* alarm_menu_entries[] = {"Alarm", "Sound", "Tracking", "back"};
-
+void sendSleepData();
 
 class AlarmMenu : public AbstractMenu {
   int selected_index = 0;
@@ -265,6 +265,7 @@ class AlarmMenu : public AbstractMenu {
       }else{
         recording_sleep = false;
         alarm_menu_entries[2] = "startTrack";
+        sendSleepData();
       }
     }
     if (selected_index == 3) g_pActiveMenu = g_pMainMenu;
@@ -724,8 +725,8 @@ void setup() {
   g_pMyAlarm1Menu = new MyAlarm1Menu();
   g_pSetTimeMenu = new SetTimeMenu();
 
-  //g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
-  g_pActiveMenu = g_pLedMenu;
+  g_pActiveMenu = g_pMainMenu; //--> g_pActiveMenu legt hier start Menü fest
+  //g_pActiveMenu = g_pLedMenu;
 
   // ... LCD Display .................................................................................................................. LCD Display ... //
   mylcd.Init_LCD();
@@ -769,7 +770,7 @@ void lowfreqUpdate() { //function so for example the clock doesnt update every c
   }
 
   g_lfu_counter_2++;
-  if(g_lfu_counter_2 > 5000){
+  if(g_lfu_counter_2 > 20000){
     g_lfu_counter_2 = 0;
     //Serial.println("RGB-Update");
     g_pLedMenu->updateLed();
@@ -927,6 +928,35 @@ void recodSleepData(){
   Serial.print(analog_value); 
   Serial.print(" V, \t Status: ");
   Serial.println(digital_value == 1 ? "Geräusch erkannt!" : "Ruhe...");
+  
+}
+
+void sendSleepData(){
+  //bluetooth!!!!!
+  Serial.println(sleep_dat_index);
+  // Wenn die Aufnahme gestoppt wurde, Daten ausgeben
+  if (sleep_dat_index > 0) {
+    Serial.println("Messung beendet. Gespeicherte Daten:");
+    float s = 0;
+    String t = "";
+    for (int i = 0; i < sleep_dat_index; i++) {
+      Serial.print("Zeit: ");
+      t = String(timeStamps[i].hour()) + ":" + String(timeStamps[i].minute()) + ":" + String(timeStamps[i].second());
+      Serial.print(t);
+      /*Serial.print(timeStamps[i].hour());
+      Serial.print(":");
+      Serial.print(timeStamps[i].minute());
+      Serial.print(":");
+      Serial.println(timeStamps[i].second());*/
+      Serial.print(", Spannung: ");
+      s = soundValues[i];
+      Serial.print(s/1000);
+      Serial.println(" V");
+    }
+    sleep_dat_index = 0;  // Daten zurücksetzen für nächste Aufnahme !!!!!!!!!!!!!!!!!!!!!!!! vieleicht noch ganz zurücksetzen!!!!!!!!!!!!!!!!
+  } else {
+    Serial.println("Keine gespeicherten Daten!");
+  }
 }
 
 // ... other .............................................................................................................................. other ... //

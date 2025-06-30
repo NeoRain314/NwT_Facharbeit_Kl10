@@ -3,9 +3,9 @@
 RTC_DS3231 rtc;
 
 int analog_input = A0;   // Mikrofon-Signal
-int digital_input = 3;   // Schwellwert-Signal
-int buttonPinAn = 4;     // Startknopf
-int buttonPinAus = 5;    // Ausknopf
+int digital_input = 11;   // Schwellwert-Signal
+int buttonPinAn = 2;     // Startknopf
+int buttonPinAus = 3;    // Ausknopf
 bool recording = false;  // Startzustand: keine Aufnahme
 
 int soundValues[100];             // Speicher für Messwerte
@@ -64,6 +64,7 @@ void loop() {
     float analog_value = analogRead(analog_input) * (5.0 / 1023.0) * 1000;
     int digital_value = digitalRead(digital_input);
 
+/*
     if (digital_value == 1) {  // Schwellwert überschritten
       if (index < 100) {       // Array nicht überfüllen
         soundValues[index] = (int)analog_value;
@@ -77,7 +78,9 @@ void loop() {
     Serial.print(analog_value);
     Serial.print(" V, \t Status: ");
     Serial.println(digital_value == 1 ? "Geräusch erkannt!" : "Ruhe...");
-
+*/
+Serial.println(analog_value);
+  Serial.println(digital_value);
     delay(100);  // Zeit zwischen Messungen
   }
   /*else if (!recording) {
