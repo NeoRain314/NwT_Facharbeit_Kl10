@@ -66,6 +66,9 @@ int sleep_dat_index = 0;
 
 #define VIBRATION_PIN 4
 
+#define FUNK_SEND_PIN 12
+#define FUNK_RECIEVE_PIN 44
+
 
 // RTC Variables
 int rtc_hour = 0;
@@ -136,9 +139,9 @@ char* intToString(int num, bool leading_zero);
 
 
 // ... Neopixel ............................................................................................................... 7 Segment Display ... //
-#define PIN 9 
+#define NEOPIXEL_PIN 9 
 #define NUMPIXELS 8
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel (NUMPIXELS, PIN, NEO_GBR + NEO_KHZ800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel (NUMPIXELS, NEOPIXEL_PIN, NEO_GBR + NEO_KHZ800);
 
 //NeoPixel Colors
 #define NEO_RED 0, 0, 255
@@ -263,7 +266,7 @@ class MyAlarm1Menu : public AbstractMenu {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Alarm Menu ~~~ //
-char* alarm_menu_entries[] = {"Alarm 1", "Sound 1", "Vibr.on", "Tracking", "back"};
+char* alarm_menu_entries[] = {"Alarm 1", "Sound-1", "Vibr.on", "Tracking", "back"};
 void sendSleepData();
 
 class AlarmMenu : public AbstractMenu {
@@ -496,7 +499,7 @@ const uint32_t led_colorCodes[] = {P(0, 0, 255), P(0, 40, 255 ), P(0, 99, 255), 
 class LedMenu : public AbstractMenu {
   int selected_index = 0;
   bool led_stat = true;
-  int led_mode = 0;
+  int led_mode = 9;
   
   public:
 
@@ -550,27 +553,25 @@ class LedMenu : public AbstractMenu {
     }
   } 
 
+  unsigned char j_ = 0; //kann zahlen von 0 - 255 speichern (255+1=0)
+
   void neoRainbow (int wait){ // die LEDs bewegen sich einzeln durch den Regenbogen
-    for (int j = 0; j < 256; j++) {  // 256 verschiedene Farbwerte für sanften Übergang
       for (int i = 0; i < NUMPIXELS; i++) {
-        int hue = (i * 256 / NUMPIXELS) + j;
+        int hue = (i * 256 / NUMPIXELS) + j_;
         pixels.setPixelColor(i, Wheel(hue & 255)); 
       }
-      //delay(wait);
-    }
+      j_++;
   }
 
   void neoRainbowAll(int wait) { // 8 LEDs zeigen immer die gleiche Farbe die gleichzeitig durch den Regenbogen geht
-    for (int j = 0; j < 256; j++) {  // Farbverlauf durch 256 Farbstufen
-      uint32_t color = Wheel(j & 255); // Farbe für alle LEDs berechnen
+      uint32_t color = Wheel(j_ & 255); // Farbe für alle LEDs berechnen
       
       for (int i = 0; i < NUMPIXELS; i++) {
         pixels.setPixelColor(i, color); // Setze alle LEDs auf die gleiche Farbe
       }
+      j_++;
 
       pixels.show();
-      //delay(wait);
-    }
   }
 
   virtual void updateLed(){
@@ -770,7 +771,11 @@ class AlarmRingingMenu : public AbstractMenu {
       ringingModule = 1;
     }
     if(ringingModule == 1) {
+      //Serial.println("test");
       ringAlarm(g_pAlarmMenu->array_pointer_tones, g_pAlarmMenu->array_pointer_length, g_pAlarmMenu->sound_array_length);
+      if(mySwitch.available()){
+        Serial.println(mySwitch.getReceivedValue());
+      }
       //if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
     }
     if(ringingModule == 2) ringAlarm(g_pTimerMenu->array_pointer_tones, g_pTimerMenu->array_pointer_length, g_pTimerMenu->sound_array_length);
@@ -815,6 +820,7 @@ void setup() {
   pinMode(SOUND_DIGITAL_PIN, INPUT);
   pinMode(MOVEMENTSENSOR_PIN, INPUT);
   pinMode(VIBRATION_PIN, OUTPUT);
+  
 
   //pinMode(PIEZO_PIN, OUTPUT);
 
@@ -864,13 +870,15 @@ void setup() {
   display.setSegments(data);
 
   // ... Funk ................................................................................................................................ Funk ... //
-  mySwitch.enableTransmit(10);  // Der Sender wird an Pin 10 angeschlossen
+  mySwitch.enableTransmit(FUNK_SEND_PIN);  // Der Sender wird an Pin 10 angeschlossen
+  mySwitch.enableReceive(FUNK_RECIEVE_PIN); //empänger
 
 }
 
 // <<< Loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< loop <<//
 int g_lfu_counter = 0;
 int g_lfu_counter_2 = 0;
+int g_lfu_counter_3 = 0;
 void lowfreqUpdate() { //function so for example the clock doesnt update every cycle because this causes errors (like with the tone() function)
   g_lfu_counter++;
   if(g_lfu_counter > 2040){
@@ -887,10 +895,15 @@ void lowfreqUpdate() { //function so for example the clock doesnt update every c
   }
 
   g_lfu_counter_2++;
-  if(g_lfu_counter_2 > 20000){
+  if(g_lfu_counter_2 > 5000){
     g_lfu_counter_2 = 0;
     //Serial.println("RGB-Update");
     g_pLedMenu->updateLed();
+  }
+
+  g_lfu_counter_3++;
+  if(g_lfu_counter_3 > 30000){
+    g_lfu_counter_3 = 0;
     if(g_pAlarmMenu->recording_sleep) recodSleepData();
   }
 }
@@ -971,7 +984,7 @@ void timer() {
 
 // ... Alarms ............................................................................................................................ Alarms ... //
 void alarm1() {
-  if (/*alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute*/true){
+  if (alarm1_time[0] == rtc_hour && alarm1_time[1] == rtc_minute /*true*/){
     if(g_pAlarmRingingMenu->ringingModule == 0) g_pAlarmRingingMenu->ringingModule = 3;
     g_pActiveMenu = g_pAlarmRingingMenu;
     update7Segment;
