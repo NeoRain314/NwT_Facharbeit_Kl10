@@ -14,38 +14,6 @@ Benennung:
 
 ****************************************************************************************/
 
-
-// <<< Inizalizing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Initalizing <<//
-#define arr_length(a) (sizeof(a) / sizeof(a[0])) // was  ist das genau                                                                                                     ?????????????????????????????
-
-// ... Pin Defines & vars .................................................................................................... Pin Defines & vars ... //
-#define SELECT_BUTTON_PIN 2
-volatile bool select_button_interrupt = false;
-
-#define OK_BUTTON_PIN 3
-volatile bool ok_button_interrupt = false;
-
-#define PIEZO_PIN 10
-
-
-
-// RTC Variables
-int rtc_hour = 0;
-int rtc_minute = 0;
-
-// Tone Defines nb 4
-#define C 264
-#define E 330
-#define G 396
-#define A 440
-#define CZWEI 528 
-#define PAUSE 0
-
-#define HALBE 3000
-#define VIERTEL 2000
-#define ACHTEL 1000
-
-
 // ... libraries ...................................................................................................................... libraries ... //
 #include <Wire.h>
 #include <Arduino.h>
@@ -68,6 +36,43 @@ int rtc_minute = 0;
 
 //Neopixels
 #include <Adafruit_NeoPixel.h>
+
+
+// <<< Inizalizing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Initalizing <<//
+#define arr_length(a) (sizeof(a) / sizeof(a[0])) // was  ist das genau                                                                                                     ?????????????????????????????
+
+// ... Pin Defines & vars .................................................................................................... Pin Defines & vars ... //
+#define SELECT_BUTTON_PIN 2
+volatile bool select_button_interrupt = false;
+
+#define OK_BUTTON_PIN 3
+volatile bool ok_button_interrupt = false;
+
+#define PIEZO_PIN 10
+
+#define SOUND_ANALOG_PIN A0
+#define SOUND_DIGITAL_PIN 11
+int soundValues[100];      // Speicher für Messwerte
+DateTime timeStamps[100];  // Speicher für Zeitstempel
+int sleep_dat_index = 0;
+
+
+// RTC Variables
+int rtc_hour = 0;
+int rtc_minute = 0;
+
+// Tone Defines nb 4
+#define C 264
+#define E 330
+#define G 396
+#define A 440
+#define CZWEI 528 
+#define PAUSE 0
+
+#define HALBE 3000
+#define VIERTEL 2000
+#define ACHTEL 1000
+
 
 // ... LCD Display .................................................................................................................. LCD Display ... //
 // --> LCD_ / lcd_ //
@@ -764,9 +769,9 @@ void lowfreqUpdate() { //function so for example the clock doesnt update every c
   }
 
   g_lfu_counter_2++;
-  if(g_lfu_counter_2 > 1000){
+  if(g_lfu_counter_2 > 5000){
     g_lfu_counter_2 = 0;
-    Serial.println("RGB-Update");
+    //Serial.println("RGB-Update");
     g_pLedMenu->updateLed();
     if(g_pAlarmMenu->recording_sleep) recodSleepData();
   }
@@ -904,7 +909,24 @@ void studyMode(){
 
 // ... sleep Recording .......................................................................................................... sleep Recording ... //
 void recodSleepData(){
- //!!!!!!!!!!!!!
+  //Serial.println("recording sleep data");
+  // ~~~~~ Sound ~~~~~~~
+  float analog_value = analogRead(SOUND_ANALOG_PIN) * (5.0 / 1023.0) * 1000;
+  int digital_value = digitalRead(SOUND_DIGITAL_PIN);
+
+  if (digital_value == 1) {  // Schwellwert überschritten
+    if (sleep_dat_index < 100) {       // Array nicht überfüllen
+      soundValues[sleep_dat_index] = (int)analog_value;
+      DateTime now = rtc.now();
+      timeStamps[sleep_dat_index] = now;
+      sleep_dat_index++;
+    }
+  }
+
+  Serial.print("Spannung: ");
+  Serial.print(analog_value); 
+  Serial.print(" V, \t Status: ");
+  Serial.println(digital_value == 1 ? "Geräusch erkannt!" : "Ruhe...");
 }
 
 // ... other .............................................................................................................................. other ... //
