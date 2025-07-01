@@ -751,7 +751,7 @@ class MainMenu : public AbstractMenu {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ AlarmRinging Menu ~~~ //
 
-class AlarmRingingMenu : public AbstractMenu {
+class   AlarmRingingMenu : public AbstractMenu {
   int i = 0; //index of current tone
   int c = 0; //counter
   
