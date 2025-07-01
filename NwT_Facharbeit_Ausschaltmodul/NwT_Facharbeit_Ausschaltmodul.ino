@@ -1,9 +1,17 @@
-void setup() {
-  // put your setup code here, to run once:
+#include <RCSwitch.h>
 
+RCSwitch mySwitch = RCSwitch();
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(3, INPUT_PULLUP)
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  if(digitalRead(3) == 0){
+    mySwitch.send(9123, 24); //Code for okPressed
+    delay(500);
+  }
 }
+
+

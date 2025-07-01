@@ -499,7 +499,7 @@ const uint32_t led_colorCodes[] = {P(0, 0, 255), P(0, 40, 255 ), P(0, 99, 255), 
 class LedMenu : public AbstractMenu {
   int selected_index = 0;
   bool led_stat = true;
-  int led_mode = 9;
+  int led_mode = 0;
   
   public:
 
@@ -766,7 +766,7 @@ class AlarmRingingMenu : public AbstractMenu {
 
   void process() {
     if(ringingModule == 3) {
-      if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
+      if(g_pModulMenu->light_modul_stat == true) mySwitch.send(5678, 24); //Code for Light Modul
       delay(100);
       ringingModule = 1;
     }
@@ -774,7 +774,9 @@ class AlarmRingingMenu : public AbstractMenu {
       //Serial.println("test");
       ringAlarm(g_pAlarmMenu->array_pointer_tones, g_pAlarmMenu->array_pointer_length, g_pAlarmMenu->sound_array_length);
       if(mySwitch.available()){
-        Serial.println(mySwitch.getReceivedValue());
+        int recievedValue = mySwitch.getReceivedValue();
+        Serial.println(recievedValue);
+        if(recievedValue == 9123) okPressed();
       }
       //if(g_pModulMenu->light_modul_stat == true) mySwitch.send(1234, 24);
     }
@@ -797,7 +799,7 @@ class AlarmRingingMenu : public AbstractMenu {
 
   void ringAlarm(int* tones, int* tone_lengths, int sound_length){
     tone(PIEZO_PIN, tones[i]);
-    //if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH);
+    if(g_pAlarmMenu->vibration_stat) digitalWrite(VIBRATION_PIN, HIGH);
     c++;
     if(c > tone_lengths[i]){
       i++;
@@ -1086,7 +1088,7 @@ void recodSleepData(){
 void sendSleepData(){
   //bluetooth!!!!!
   Serial.println(sleep_dat_index);
-  // Wenn die Aufnahme gestoppt wurde, Daten ausgeben
+  // Wenn die Aufnahme gestoppt wurde: Daten ausgeben
   if (sleep_dat_index > 0) {
     Serial.println("Messung beendet. Gespeicherte Daten:");
     float s = 0;
@@ -1108,7 +1110,7 @@ void sendSleepData(){
       Serial.print(", Movement: ");
       Serial.println(movementValues[i]);
     }
-    sleep_dat_index = 0;  // Daten zurücksetzen für nächste Aufnahme !!!!!!!!!!!!!!!!!!!!!!!! vieleicht noch ganz zurücksetzen!!!!!!!!!!!!!!!!
+    sleep_dat_index = 0;  // Daten zurücksetzen für nächste Aufnahme
   } else {
     Serial.println("Keine gespeicherten Daten!");
   }
