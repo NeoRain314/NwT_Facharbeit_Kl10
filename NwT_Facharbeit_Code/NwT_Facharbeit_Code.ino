@@ -1,8 +1,3 @@
-
-
-
-
-
 /***************************************************************************************
 
 g_... ---> globale Var
@@ -990,7 +985,6 @@ void alarm1() {
     if(g_pAlarmRingingMenu->ringingModule == 0) g_pAlarmRingingMenu->ringingModule = 3;
     g_pActiveMenu = g_pAlarmRingingMenu;
     update7Segment;
-    //sende funk signal zu Lichtanschaltknopf (wenn in Menü eingeschaltet) / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ / ~ 
   }
 }
 
@@ -1010,7 +1004,7 @@ void studyMode(){
       return;
     }
     if(g_pStudyMenu->study_pause == false){
-  Serial.println("pause");
+      //Serial.println("pause");
       //next pause
       g_pStudyMenu->study_pause = true;
       studytimer_time[0] = 0;
@@ -1020,18 +1014,16 @@ void studyMode(){
       g_pStudyMenu->studytimer_start_mill = millis();
 
       g_pStudyMenu->study_curr_repetition++;
-      // irgendwie geht er direkt am anfang in die pause !?!?!?!?!?!?!
 
     } else {
       //next focus
-  Serial.println("Focus");
+      //Serial.println("Focus");
       g_pStudyMenu->study_pause = false;
       studytimer_time[0] = 0;
       studytimer_time[1] = focus_times[g_pStudyMenu->study_mode];
 
       g_pStudyMenu->studytimer_time_mill = studytimer_time[0]*60000 + studytimer_time[1]*1000;
       g_pStudyMenu->studytimer_start_mill = millis();
-
     }
   }
 
@@ -1144,9 +1136,3 @@ void selectButton() {
   //Serial.println("select");
   g_pActiveMenu->selectPressed();
 }
-
-// ... Wecker ............................................................................................................................ Wecker ... //
-
-
-// ... Timer .............................................................................................................................. Timer ... //
-
